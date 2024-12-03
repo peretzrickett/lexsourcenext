@@ -1,0 +1,21 @@
+{
+    "clients": [
+      {
+        "name": "ClientA",
+        "cidr": "10.1.0.0/16",
+        "subnets": {
+          "frontEnd": "10.1.1.0/24",
+          "backEnd": "10.1.2.0/24"
+        }
+      },
+      {
+        "name": "ClientB",
+        "cidr": "10.2.0.0/16",
+        "subnets": {
+          "frontEnd": "10.2.1.0/24",
+          "backEnd": "10.2.2.0/24"
+        }
+      }
+    ]
+  }
+  
