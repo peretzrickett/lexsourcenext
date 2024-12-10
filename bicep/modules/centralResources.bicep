@@ -15,15 +15,15 @@ param centralVNetCidr string = '10.0.0.0/16'
 
 @description('Subnets for the central VNet')
 param subnets array = [
-  { name: 'FirewallSubnet', addressPrefix: '10.0.1.0/24' }
+  { name: 'AzureFirewallSubnet', addressPrefix: '10.0.1.0/24' }
   { name: 'OtherServices', addressPrefix: '10.0.2.0/24' }
 ]
 
 // Deploy the central VNet
 module centralVNet 'vnet.bicep' = {
-  name: 'centralVNetDeployment'
+  name: 'centralVNet'
   params: {
-    name: 'central-vnet'
+    name: 'vnetcentral'
     location: location
     addressPrefixes: [centralVNetCidr]
     subnets: subnets
@@ -32,16 +32,15 @@ module centralVNet 'vnet.bicep' = {
 
 // Deploy Azure Front Door
 module frontDoor 'frontDoor.bicep' = {
-  name: 'frontDoorDeployment'
+  name: 'frontDoor'
   params: {
-    location: location
     name: frontDoorName
   }
 }
 
 // Deploy Azure Firewall
 module firewall 'firewall.bicep' = {
-  name: 'firewallDeployment'
+  name: 'firewall'
   params: {
     name: firewallName
     location: location
@@ -51,7 +50,7 @@ module firewall 'firewall.bicep' = {
 
 // Deploy Sentinel (Log Analytics Workspace)
 module sentinel 'sentinel.bicep' = {
-  name: 'sentinelDeployment'
+  name: 'sentinel'
   params: {
     name: sentinelWorkspaceName
     location: location

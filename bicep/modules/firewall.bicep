@@ -21,6 +21,16 @@ param firewallPolicyId string = ''
 @description('Tags to apply to the Azure Firewall')
 param tags object = {}
 
+resource publicIp 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
+  name: 'ip${name}'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
 resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
   name: name
   location: location
@@ -31,6 +41,9 @@ resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
         properties: {
           subnet: {
             id: subnetId
+          }
+          publicIPAddress: {
+            id: publicIp.id
           }
         }
       }

@@ -6,9 +6,10 @@ param location string
 
 @description('SKU configuration for the App Service Plan')
 param sku object = {
-  name: 'P1v2'
-  tier: 'PremiumV2'
-  size: '1'
+  name: 'S1'
+  tier: 'Standard'
+  size: 'S1'
+  capacity: 1
 }
 
 @description('Indicates whether the App Service Plan is for Linux')

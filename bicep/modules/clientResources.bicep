@@ -12,9 +12,9 @@ param subnets object
 
 // Deploy VNet
 module vnet 'vnet.bicep' = {
-  name: '${clientName}-vnet'
+  name: 'vnet${clientName}'
   params: {
-    name: '${clientName}-vnet'
+    name: 'vnet${clientName}'
     location: location
     addressPrefixes: [cidr]
     subnets: [
@@ -25,34 +25,35 @@ module vnet 'vnet.bicep' = {
 }
 
 // Deploy App Service Plan
-module appServicePlan 'appServicePlan.bicep' = {
-  name: '${clientName}-appServicePlan'
-  params: {
-    name: '${clientName}-appServicePlan'
-    location: location
-    sku: {
-      name: 'P1v2'
-      tier: 'PremiumV2'
-      size: '1'
-    }
-  }
-}
+// module appServicePlan 'appServicePlan.bicep' = {
+//   name: 'asp${clientName}'
+//   params: {
+//     name: 'asp${clientName}'
+//     location: location
+//     sku: {
+//       name: 'S1'
+//       tier: 'Standard'
+//       size: 'S1'
+//       capacity: 1
+//     }
+//   }
+// }
 
-// Deploy App Service
-module appService 'appService.bicep' = {
-  name: '${clientName}-appService'
-  params: {
-    name: '${clientName}-appService'
-    location: location
-    appServicePlanId: appServicePlan.outputs.id
-  }
-}
+// // Deploy App Service
+// module appService 'appService.bicep' = {
+//   name: 'app${clientName}'
+//   params: {
+//     name: 'app${clientName}'
+//     location: location
+//     appServicePlanId: appServicePlan.outputs.id
+//   }
+// }
 
 // Deploy SQL Server
 module sqlServer 'sqlServer.bicep' = {
-  name: '${clientName}-sqlServer'
+  name: 'sql${clientName}'
   params: {
-    name: '${clientName}-sql'
+    name: 'sql${clientName}'
     location: location
     adminLogin: 'adminUser'
     adminPassword: 'Password@123!' // Replace with secure param later
@@ -61,27 +62,27 @@ module sqlServer 'sqlServer.bicep' = {
 
 // Deploy Storage Account
 module storageAccount 'storageAccount.bicep' = {
-  name: '${clientName}-storage'
+  name: 'stg${clientName}'
   params: {
-    name: toLower('${clientName}storage')
+    name: toLower('stg${clientName}')
     location: location
   }
 }
 
 // Deploy Key Vault
 module keyVault 'keyVault.bicep' = {
-  name: '${clientName}-keyVault'
+  name: 'kv${clientName}'
   params: {
-    name: '${clientName}-kv'
+    name: 'kv${clientName}'
     location: location
   }
 }
 
 // Deploy App Insights
 module appInsights 'appInsights.bicep' = {
-  name: '${clientName}-appInsights'
+  name: 'ai${clientName}'
   params: {
-    name: '${clientName}-ai'
+    name: 'ai${clientName}'
     location: location
   }
 }

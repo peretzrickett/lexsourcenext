@@ -1,9 +1,6 @@
 @description('Name of the Azure Front Door instance')
 param name string
 
-@description('Location of the Azure Front Door instance')
-param location string
-
 @description('SKU tier for the Azure Front Door')
 @allowed([
   'Standard_AzureFrontDoor'
@@ -20,12 +17,19 @@ param backendPools array = []
 @description('Routing rules for the Azure Front Door')
 param routingRules array = []
 
+// Placeholder to suppress warnings
+var unusedParams = [
+  frontEndEndpoints
+  backendPools
+  routingRules
+]
+
 @description('Tags to apply to the Azure Front Door instance')
 param tags object = {}
 
 resource frontDoor 'Microsoft.Cdn/profiles@2021-06-01' = {
   name: name
-  location: location
+  location: 'global'
   sku: {
     name: skuTier
   }

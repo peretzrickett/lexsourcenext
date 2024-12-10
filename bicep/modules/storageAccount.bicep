@@ -1,10 +1,10 @@
-@description('Name of the storage account')
+@description('Name of the Storage Account')
 param name string
 
-@description('Location of the storage account')
+@description('Location where the Storage Account will be created')
 param location string
 
-@description('Replication type for the storage account')
+@description('Replication type for the Storage Account')
 @allowed([
   'Standard_LRS'
   'Standard_GRS'
@@ -14,17 +14,22 @@ param location string
 ])
 param skuName string = 'Standard_LRS'
 
-@description('Access tier for the storage account (only applicable to Standard accounts)')
-@allowed([
-  'Hot'
-  'Cool'
-])
-param accessTier string = 'Hot'
-
-@description('Indicates whether the storage account is a general-purpose V2 account')
+@description('Indicates whether the Storage Account is general-purpose V2')
 param kind string = 'StorageV2'
 
-@description('Tags to apply to the storage account')
+@description('Enable blob soft delete retention policy')
+param enableBlobSoftDelete bool = false
+
+@description('Retention period in days for blob soft delete (set 0 to disable)')
+param blobSoftDeleteRetentionDays int = 0
+
+@description('Enable container soft delete retention policy')
+param enableContainerSoftDelete bool = false
+
+@description('Retention period in days for container soft delete (set 0 to disable)')
+param containerSoftDeleteRetentionDays int = 0
+
+@description('Tags to apply to the Storage Account')
 param tags object = {}
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
@@ -35,9 +40,35 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   }
   kind: kind
   properties: {
-    accessTier: accessTier
+    supportsHttpsTrafficOnly: true
   }
   tags: tags
 }
 
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2021-09-01' = {
+  name: 'default'
+  parent: storageAccount
+  properties: {
+    deleteRetentionPolicy: blobSoftDeleteRetentionDays > 0 ? {
+      enabled: enableBlobSoftDelete
+      days: blobSoftDeleteRetentionDays
+    } : {
+      enabled: false
+    }
+    containerDeleteRetentionPolicy: containerSoftDeleteRetentionDays > 0 ? {
+      enabled: enableContainerSoftDelete
+      days: containerSoftDeleteRetentionDays
+    } : {
+      enabled: false
+    }
+  }
+}
+
+@description('The resource ID of the Storage Account')
 output id string = storageAccount.id
+
+@description('The name of the Storage Account')
+output name string = storageAccount.name
+
+@description('The primary endpoints of the Storage Account')
+output primaryEndpoints object = storageAccount.properties.primaryEndpoints

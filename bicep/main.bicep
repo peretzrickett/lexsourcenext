@@ -1,22 +1,39 @@
+targetScope = 'subscription'
+
 @description('List of client configurations')
 param clients array
 
 @description('Location for all resources')
 param location string = 'eastus'
 
-@description('Central Resource Group Name')
-param centralResourceGroupName string = 'rg-central'
+// Create the central resource group at the subscription level
+module centralResourceGroup 'modules/resourceGroup.bicep' = {
+  name: 'centralResourceGroup'
+  params: {
+    name: 'rg-central'
+    location: location
+  }
+}
 
-// Deploy Centralized Resources (Sentinel, Front Door, Firewall)
+// Create resource groups for each client at the subscription level
+module clientResourceGroups 'modules/resourceGroup.bicep' = [for client in clients: {
+  name: 'rg-${client.name}'
+  params: {
+    name: 'rg-${client.name}'
+    location: location
+  }
+}]
+
+// Deploy central resources
 module centralResources 'modules/centralResources.bicep' = {
   name: 'centralResourcesDeployment'
-  scope: resourceGroup(centralResourceGroupName)
+  scope: resourceGroup('rg-central')
   params: {
     location: location
   }
 }
 
-// Loop through each client and deploy their resources in their respective resource groups
+// Deploy client-specific resources
 module clientResources 'modules/clientResources.bicep' = [for client in clients: {
   name: '${client.name}-resources'
   scope: resourceGroup('rg-${client.name}')
