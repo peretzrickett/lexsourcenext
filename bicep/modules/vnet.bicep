@@ -22,3 +22,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
 }
 
 output id string = vnet.id
+output subnets array = [
+  for subnet in subnets: {
+    name: subnet.name
+    id: '${vnet.id}/subnets/${subnet.name}'
+  }
+]

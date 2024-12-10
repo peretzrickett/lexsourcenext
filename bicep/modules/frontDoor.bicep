@@ -1,12 +1,11 @@
 param location string
+param name string
 
 resource frontDoor 'Microsoft.Cdn/profiles@2021-06-01' = {
-  name: 'globalFrontDoor'
+  name: name
   location: location
-  properties: {
-    sku: {
-      name: 'Standard_AzureFrontDoor'
-    }
+  sku: {
+    name: 'Standard_AzureFrontDoor'
   }
 }
 
