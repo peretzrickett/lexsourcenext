@@ -9,7 +9,7 @@ param sku object = {
   name: 'S1'
   tier: 'Standard'
   size: 'S1'
-  capacity: 1
+  capacity: 2
 }
 
 @description('Indicates whether the App Service Plan is for Linux')

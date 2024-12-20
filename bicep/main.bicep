@@ -6,6 +6,9 @@ param clients array
 @description('Location for all resources')
 param location string = 'eastus'
 
+@description('Distinguished qualifier for resources')
+param distinguishedQualifier string = 'lexsb'
+
 // Create the central resource group at the subscription level
 module centralResourceGroup 'modules/resourceGroup.bicep' = {
   name: 'centralResourceGroup'
@@ -30,7 +33,11 @@ module centralResources 'modules/centralResources.bicep' = {
   scope: resourceGroup('rg-central')
   params: {
     location: location
+    distinguishedQualifier: distinguishedQualifier
   }
+  dependsOn: [
+    centralResourceGroup
+  ]
 }
 
 // Deploy client-specific resources
@@ -42,5 +49,9 @@ module clientResources 'modules/clientResources.bicep' = [for client in clients:
     location: location
     cidr: client.cidr
     subnets: client.subnets
+    distinguishedQualifier: distinguishedQualifier
   }
+  dependsOn: [
+    clientResourceGroups
+  ]
 }]

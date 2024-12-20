@@ -4,6 +4,10 @@ param name string
 @description('Location where the App Service will be deployed')
 param location string
 
+
+@description('Subnet ID for Private Link')
+param subnetId string
+
 @description('ID of the App Service Plan')
 param appServicePlanId string
 
@@ -32,6 +36,7 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
   location: location
   properties: {
     serverFarmId: appServicePlanId // Link to the App Service Plan
+    publicNetworkAccess: 'Disabled'
     siteConfig: {
       appSettings: [
         for setting in appSettings: {
@@ -43,6 +48,19 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
     }
   }
   tags: tags
+}
+
+// Private Endpoint for App Service
+module privateEndpoint 'privateEndpoint.bicep' = {
+  name: 'pe-${name}'
+  params: {
+    name: 'pe-${name}'
+    location: location
+    privateLinkServiceId: appService.id
+    subnetId: subnetId
+    groupIds: [ 'sites' ]
+    tags: tags
+  }
 }
 
 // Output the resource ID of the App Service

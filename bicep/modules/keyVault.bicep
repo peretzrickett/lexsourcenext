@@ -4,6 +4,9 @@ param name string
 @description('Location of the Key Vault')
 param location string
 
+@description('Subnet ID for Private Link')
+param subnetId string
+
 @description('SKU of the Key Vault (standard or premium)')
 @allowed([
   'standard'
@@ -15,7 +18,10 @@ param skuName string = 'standard'
 param accessPolicies array = []
 
 @description('Soft delete retention period in days (minimum 7 days)')
-param softDeleteRetentionDays int = 90
+param softDeleteRetentionDays int = 7
+
+@description('Workload type (dev or production)')
+param workloadType string = 'dev'
 
 @description('Enable purge protection for the Key Vault')
 param enablePurgeProtection bool = true
@@ -40,6 +46,21 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   tags: tags
 }
 
+// Private Endpoint for Key Vault
+module privateEndpoint 'privateEndpoint.bicep' = {
+  name: 'pe-${name}'
+  params: {
+    name: 'pe-${name}'
+    location: location
+    privateLinkServiceId: keyVault.id
+    subnetId: subnetId
+    groupIds: [ 'vault' ]
+    tags: tags
+  }
+}
+
 output id string = keyVault.id
 output vaultUri string = keyVault.properties.vaultUri
 output name string = keyVault.name
+
+

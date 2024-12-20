@@ -22,7 +22,7 @@ param firewallPolicyId string = ''
 param tags object = {}
 
 resource publicIp 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
-  name: 'ip${name}'
+  name: 'ip-${name}'
   location: location
   sku: {
     name: 'Standard'
@@ -37,7 +37,7 @@ resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
   properties: {
     ipConfigurations: [
       {
-        name: '${name}-ipconfig'
+        name: 'ipconfig-${name}'
         properties: {
           subnet: {
             id: subnetId

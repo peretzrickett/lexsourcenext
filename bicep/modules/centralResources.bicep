@@ -13,6 +13,9 @@ param sentinelWorkspaceName string = 'globalSentinelWorkspace'
 @description('CIDR block for the central VNet')
 param centralVNetCidr string = '10.0.0.0/16'
 
+@description('Distinguished qualifier for resources')
+param distinguishedQualifier string
+
 @description('Subnets for the central VNet')
 param subnets array = [
   { name: 'AzureFirewallSubnet', addressPrefix: '10.0.1.0/24' }
@@ -23,7 +26,7 @@ param subnets array = [
 module centralVNet 'vnet.bicep' = {
   name: 'centralVNet'
   params: {
-    name: 'vnetcentral'
+    name: 'vnet-${distinguishedQualifier}-Central'
     location: location
     addressPrefixes: [centralVNetCidr]
     subnets: subnets

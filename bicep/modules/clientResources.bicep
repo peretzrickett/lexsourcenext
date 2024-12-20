@@ -10,11 +10,14 @@ param cidr string
 @description('Subnets configuration')
 param subnets object
 
+@description('Distinguished qualifier for resources')
+param distinguishedQualifier string
+
 // Deploy VNet
 module vnet 'vnet.bicep' = {
-  name: 'vnet${clientName}'
+  name: 'vnet-${distinguishedQualifier}-${clientName}'
   params: {
-    name: 'vnet${clientName}'
+    name: 'vnet-${distinguishedQualifier}-${clientName}'
     location: location
     addressPrefixes: [cidr]
     subnets: [
@@ -24,11 +27,11 @@ module vnet 'vnet.bicep' = {
   }
 }
 
-// Deploy App Service Plan
+// // Deploy App Service Plan
 // module appServicePlan 'appServicePlan.bicep' = {
-//   name: 'asp${clientName}'
+//   name: 'asp-${distinguishedQualifier}-${clientName}'
 //   params: {
-//     name: 'asp${clientName}'
+//     name: 'asp-${distinguishedQualifier}-${clientName}'
 //     location: location
 //     sku: {
 //       name: 'S1'
@@ -41,20 +44,22 @@ module vnet 'vnet.bicep' = {
 
 // // Deploy App Service
 // module appService 'appService.bicep' = {
-//   name: 'app${clientName}'
+//   name: 'app-${distinguishedQualifier}-${clientName}'
 //   params: {
-//     name: 'app${clientName}'
+//     name: 'app-${distinguishedQualifier}-${clientName}'
 //     location: location
+//     subnetId: vnet.outputs.subnets[0].id
 //     appServicePlanId: appServicePlan.outputs.id
 //   }
 // }
 
 // Deploy SQL Server
 module sqlServer 'sqlServer.bicep' = {
-  name: 'sql${clientName}'
+  name: 'sql-${distinguishedQualifier}-${clientName}'
   params: {
-    name: 'sql${clientName}'
+    name: 'sql-${distinguishedQualifier}-${clientName}'
     location: location
+    subnetId: vnet.outputs.subnets[1].id
     adminLogin: 'adminUser'
     adminPassword: 'Password@123!' // Replace with secure param later
   }
@@ -62,27 +67,30 @@ module sqlServer 'sqlServer.bicep' = {
 
 // Deploy Storage Account
 module storageAccount 'storageAccount.bicep' = {
-  name: 'stg${clientName}'
+  name: 'stg${distinguishedQualifier}${clientName}'
   params: {
     name: toLower('stg${clientName}')
     location: location
+    subnetId: vnet.outputs.subnets[1].id
   }
 }
 
 // Deploy Key Vault
 module keyVault 'keyVault.bicep' = {
-  name: 'kv${clientName}'
+  name: 'pkv-${distinguishedQualifier}-${clientName}'
   params: {
-    name: 'kv${clientName}'
+    name: 'pkv-${distinguishedQualifier}-${clientName}'
     location: location
+    subnetId: vnet.outputs.subnets[1].id
   }
 }
 
 // Deploy App Insights
 module appInsights 'appInsights.bicep' = {
-  name: 'ai${clientName}'
+  name: 'pai-${distinguishedQualifier}-${clientName}'
   params: {
-    name: 'ai${clientName}'
+    name: 'ai-${distinguishedQualifier}-${clientName}'
     location: location
+    subnetId: vnet.outputs.subnets[1].id
   }
 }

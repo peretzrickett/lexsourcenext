@@ -4,6 +4,10 @@ param name string
 @description('Location where the Storage Account will be created')
 param location string
 
+
+@description('Subnet ID for Private Link connection')
+param subnetId string
+
 @description('Replication type for the Storage Account')
 @allowed([
   'Standard_LRS'
@@ -61,6 +65,19 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2021-09-01'
     } : {
       enabled: false
     }
+  }
+}
+
+// Private Endpoint for Storage Account (blob access)
+module privateEndpoint 'privateEndpoint.bicep' = {
+  name: 'pe-${name}'
+  params: {
+    name: 'pe-${name}'
+    location: location
+    privateLinkServiceId: storageAccount.id
+    subnetId: subnetId
+    groupIds: [ 'blob' ]
+    tags: tags
   }
 }
 
