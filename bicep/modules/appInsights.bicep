@@ -16,22 +16,41 @@ param subnetId string
 ])
 param applicationType string = 'web'
 
-@description('Workspace resource ID for linking Application Insights to a Log Analytics workspace (optional)')
-param workspaceResourceId string = ''
-
-@description('Tags to apply to the Application Insights instance')
+@description('Tags for the Application Insights instance')
 param tags object = {}
 
-@description('Create an Application Insights instance')
-resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+@description('Enable Private Link Scope integration')
+param enablePrivateLinkScope bool = true
+
+@description('Name of the Private Link Scope')
+param privateLinkScopeName string
+
+@description('Restrict public access to Application Insights')
+param restrictPublicAccess bool = true
+
+resource appInsights 'Microsoft.Insights/components@2021-03-08' = {
   name: name
   location: location
-  kind: applicationType // Use the application type as the "kind"
+  kind: applicationType
+  tags: tags
   properties: {
     Application_Type: applicationType
-    WorkspaceResourceId: empty(workspaceResourceId) ? null : workspaceResourceId
+    publicNetworkAccessForIngestion: restrictPublicAccess ? 'Disabled' : 'Enabled'
+    publicNetworkAccessForQuery: restrictPublicAccess ? 'Disabled' : 'Enabled'
   }
-  tags: tags
+}
+
+resource privateLinkScope 'Microsoft.Insights/privateLinkScopes@2021-05-01-preview' = if (enablePrivateLinkScope) {
+  name: 'pls-${name}'
+  location: location
+  properties: {
+    linkedResources: [
+      {
+        id: appInsights.id
+        name: appInsights.name
+      }
+    ]
+  }
 }
 
 // Private Endpoint for App Insights
@@ -40,13 +59,12 @@ module privateEndpoint 'privateEndpoint.bicep' = {
   params: {
     name: 'pe-${name}'
     location: location
-    privateLinkServiceId: appInsights.id
+    privateLinkServiceId: privateLinkScope.id
     subnetId: subnetId
     groupIds: [ 'components' ]
     tags: tags
   }
 }
-
 @description('The resource ID of the App Insights')
 output id string = appInsights.id
 
@@ -55,3 +73,9 @@ output instrumentationKey string = appInsights.properties.InstrumentationKey
 
 @description('The connection string of the App Insights')
 output connectionString string = appInsights.properties.ConnectionString
+
+@description("The App Insights resource Id")
+output appInsightsId string = appInsights.id
+
+@description("The Private Link Scope resource Id")
+output privateLinkScopeId string = enablePrivateLinkScope ? privateLinkScope.id : ''
