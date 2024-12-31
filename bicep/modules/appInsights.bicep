@@ -74,8 +74,8 @@ output instrumentationKey string = appInsights.properties.InstrumentationKey
 @description('The connection string of the App Insights')
 output connectionString string = appInsights.properties.ConnectionString
 
-@description("The App Insights resource Id")
+@description('The App Insights resource Id')
 output appInsightsId string = appInsights.id
 
-@description("The Private Link Scope resource Id")
+@description('The Private Link Scope resource Id')
 output privateLinkScopeId string = enablePrivateLinkScope ? privateLinkScope.id : ''
