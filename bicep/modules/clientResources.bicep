@@ -11,13 +11,13 @@ param cidr string
 param subnets object
 
 @description('Distinguished qualifier for resources')
-param distinguishedQualifier string
+param discriminator string
 
 // Deploy VNet
 module vnet 'vnet.bicep' = {
-  name: 'vnet-${distinguishedQualifier}-${clientName}'
+  name: 'vnet-${discriminator}-${clientName}'
   params: {
-    name: 'vnet-${distinguishedQualifier}-${clientName}'
+    name: 'vnet-${discriminator}-${clientName}'
     location: location
     addressPrefixes: [cidr]
     subnets: [
@@ -27,37 +27,37 @@ module vnet 'vnet.bicep' = {
   }
 }
 
-// // Deploy App Service Plan
-// module appServicePlan 'appServicePlan.bicep' = {
-//   name: 'asp-${distinguishedQualifier}-${clientName}'
-//   params: {
-//     name: 'asp-${distinguishedQualifier}-${clientName}'
-//     location: location
-//     sku: {
-//       name: 'S1'
-//       tier: 'Standard'
-//       size: 'S1'
-//       capacity: 1
-//     }
-//   }
-// }
+// Deploy App Service Plan
+module appServicePlan 'appServicePlan.bicep' = {
+  name: 'asp-${discriminator}-${clientName}'
+  params: {
+    name: 'asp-${discriminator}-${clientName}'
+    location: location
+    sku: {
+      name: 'S1'
+      tier: 'Standard'
+      size: 'S1'
+      capacity: 1
+    }
+  }
+}
 
-// // Deploy App Service
-// module appService 'appService.bicep' = {
-//   name: 'app-${distinguishedQualifier}-${clientName}'
-//   params: {
-//     name: 'app-${distinguishedQualifier}-${clientName}'
-//     location: location
-//     subnetId: vnet.outputs.subnets[0].id
-//     appServicePlanId: appServicePlan.outputs.id
-//   }
-// }
+// Deploy App Service
+module appService 'appService.bicep' = {
+  name: 'app-${discriminator}-${clientName}'
+  params: {
+    name: 'app-${discriminator}-${clientName}'
+    location: location
+    subnetId: vnet.outputs.subnets[0].id
+    appServicePlanId: appServicePlan.outputs.id
+  }
+}
 
 // Deploy SQL Server
 module sqlServer 'sqlServer.bicep' = {
-  name: 'sql-${distinguishedQualifier}-${clientName}'
+  name: 'sql-${discriminator}-${clientName}'
   params: {
-    name: 'sql-${distinguishedQualifier}-${clientName}'
+    name: 'sql-${discriminator}-${clientName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
     adminLogin: 'adminUser'
@@ -67,9 +67,9 @@ module sqlServer 'sqlServer.bicep' = {
 
 // Deploy Storage Account
 module storageAccount 'storageAccount.bicep' = {
-  name: 'stg${distinguishedQualifier}${clientName}'
+  name: 'stg${discriminator}${clientName}'
   params: {
-    name: toLower('stg${clientName}')
+    name: toLower('stg${discriminator}${clientName}')
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }
@@ -77,9 +77,9 @@ module storageAccount 'storageAccount.bicep' = {
 
 // Deploy Key Vault
 module keyVault 'keyVault.bicep' = {
-  name: 'pkv-${distinguishedQualifier}-${clientName}'
+  name: 'pkv-${discriminator}-${clientName}'
   params: {
-    name: 'pkv-${distinguishedQualifier}-${clientName}'
+    name: 'pkv-${discriminator}-${clientName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }
@@ -87,9 +87,9 @@ module keyVault 'keyVault.bicep' = {
 
 // Deploy App Insights
 module appInsights 'appInsights.bicep' = {
-  name: 'pai-${distinguishedQualifier}-${clientName}'
+  name: 'pai-${discriminator}-${clientName}'
   params: {
-    name: 'ai-${distinguishedQualifier}-${clientName}'
+    name: 'ai-${discriminator}-${clientName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }

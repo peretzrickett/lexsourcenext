@@ -14,7 +14,7 @@ param sentinelWorkspaceName string = 'globalSentinelWorkspace'
 param centralVNetCidr string = '10.0.0.0/16'
 
 @description('Distinguished qualifier for resources')
-param distinguishedQualifier string
+param discriminator string
 
 @description('Subnets for the central VNet')
 param subnets array = [
@@ -26,7 +26,7 @@ param subnets array = [
 module centralVNet 'vnet.bicep' = {
   name: 'centralVNet'
   params: {
-    name: 'vnet-${distinguishedQualifier}-Central'
+    name: 'vnet-${discriminator}-Central'
     location: location
     addressPrefixes: [centralVNetCidr]
     subnets: subnets
