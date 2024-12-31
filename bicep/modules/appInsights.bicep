@@ -22,9 +22,6 @@ param tags object = {}
 @description('Enable Private Link Scope integration')
 param enablePrivateLinkScope bool = true
 
-@description('Name of the Private Link Scope')
-param privateLinkScopeName string
-
 @description('Restrict public access to Application Insights')
 param restrictPublicAccess bool = true
 
