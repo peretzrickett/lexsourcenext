@@ -39,7 +39,7 @@ resource appInsights 'Microsoft.Insights/components@2021-03-08' = {
 
 resource privateLinkScope 'Microsoft.Insights/privateLinkScopes@2021-05-01-preview' = if (enablePrivateLinkScope) {
   name: 'pls-${name}'
-  location: location
+  location: 'global'
   properties: {
     linkedResources: [
       {
