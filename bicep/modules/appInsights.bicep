@@ -25,7 +25,13 @@ param enablePrivateLinkScope bool = true
 @description('Restrict public access to Application Insights')
 param restrictPublicAccess bool = true
 
-resource appInsights 'Microsoft.Insights/components@2021-03-08' = {
+@description('Name of the Application Insights instance')
+param appInsightsName string
+
+@description('Enable Private Link Scope for the Application Insights instance')
+param enablePrivateLink bool
+
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: name
   location: location
   kind: applicationType
@@ -34,19 +40,35 @@ resource appInsights 'Microsoft.Insights/components@2021-03-08' = {
     Application_Type: applicationType
     publicNetworkAccessForIngestion: restrictPublicAccess ? 'Disabled' : 'Enabled'
     publicNetworkAccessForQuery: restrictPublicAccess ? 'Disabled' : 'Enabled'
+    IngestionMode: 'ApplicationInsights'
   }
 }
 
-resource privateLinkScope 'Microsoft.Insights/privateLinkScopes@2021-05-01-preview' = if (enablePrivateLinkScope) {
+resource privateLinkScope 'Microsoft.Insights/privateLinkScopes@2021-09-01' = if (enablePrivateLinkScope) {
   name: 'pls-${name}'
   location: 'global'
   properties: {
-    linkedResources: [
-      {
-        id: appInsights.id
-        name: appInsights.name
-      }
-    ]
+    accessModeSettings: {
+      ingestionAccessMode: 'PrivateOnly'
+      queryAccessMode: 'PrivateOnly'
+    }
+  }
+}
+
+resource privateLinkScopeAssociation 'Microsoft.Insights/privateLinkScopes/scopedResources@2022-06-01' = if (enablePrivateLink) {
+  name: '${appInsightsName}-association'
+  parent: privateLinkScope
+  properties: {
+    linkedResourceId: appInsights.id
+  }
+}
+
+// Scoped Resource for App Insights
+resource scopedResource 'Microsoft.Insights/privateLinkScopes/scopedResources@2021-07-01-preview' = {
+  name: appInsights.name
+  parent: privateLinkScope
+  properties: {
+    linkedResourceId: appInsights.id
   }
 }
 
@@ -58,7 +80,7 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     location: location
     privateLinkServiceId: privateLinkScope.id
     subnetId: subnetId
-    groupIds: [ 'components' ]
+    groupIds: [ 'ingestion' ]
     tags: tags
   }
 }
@@ -76,3 +98,4 @@ output appInsightsId string = appInsights.id
 
 @description('The Private Link Scope resource Id')
 output privateLinkScopeId string = enablePrivateLinkScope ? privateLinkScope.id : ''
+
