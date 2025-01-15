@@ -55,7 +55,7 @@ resource privateLinkScope 'Microsoft.Insights/privateLinkScopes@2021-09-01' = if
   }
 }
 
-resource privateLinkScopeAssociation 'Microsoft.Insights/privateLinkScopes/scopedResources@2022-06-01' = if (enablePrivateLink) {
+resource privateLinkScopeAssociation 'Microsoft.Insights/privateLinkScopes/scopedResources@2021-09-01' = if (enablePrivateLink) {
   name: '${appInsightsName}-association'
   parent: privateLinkScope
   properties: {
@@ -63,9 +63,9 @@ resource privateLinkScopeAssociation 'Microsoft.Insights/privateLinkScopes/scope
   }
 }
 
-// Scoped Resource for App Insights
-resource scopedResource 'Microsoft.Insights/privateLinkScopes/scopedResources@2021-07-01-preview' = {
-  name: appInsights.name
+// Link Application Insights to Private Link Scope
+resource scopedResources 'Microsoft.Insights/privateLinkScopes/scopedResources@2021-09-01' = if (enablePrivateLink) {
+  name: 'azuremonitor'
   parent: privateLinkScope
   properties: {
     linkedResourceId: appInsights.id
@@ -80,7 +80,7 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     location: location
     privateLinkServiceId: privateLinkScope.id
     subnetId: subnetId
-    groupIds: [ 'ingestion' ]
+    groupIds: [ 'azuremonitor' ]
     tags: tags
   }
 }

@@ -13,11 +13,13 @@ param subnets object
 @description('Distinguished qualifier for resources')
 param discriminator string
 
+var resourceBaseName = '${discriminator}-${clientName}'
+
 // Deploy VNet
 module vnet 'vnet.bicep' = {
-  name: 'vnet-${discriminator}-${clientName}'
+  name: 'vnet-${resourceBaseName}'
   params: {
-    name: 'vnet-${discriminator}-${clientName}'
+    name: 'vnet-${resourceBaseName}'
     location: location
     addressPrefixes: [cidr]
     subnets: [
@@ -29,9 +31,9 @@ module vnet 'vnet.bicep' = {
 
 // Deploy App Service Plan
 module appServicePlan 'appServicePlan.bicep' = {
-  name: 'asp-${discriminator}-${clientName}'
+  name: 'asp-${resourceBaseName}'
   params: {
-    name: 'asp-${discriminator}-${clientName}'
+    name: 'asp-${resourceBaseName}'
     location: location
     sku: {
       name: 'S1'
@@ -44,9 +46,9 @@ module appServicePlan 'appServicePlan.bicep' = {
 
 // Deploy App Service
 module appService 'appService.bicep' = {
-  name: 'app-${discriminator}-${clientName}'
+  name: 'app-${resourceBaseName}'
   params: {
-    name: 'app-${discriminator}-${clientName}'
+    name: 'app-${resourceBaseName}'
     location: location
     subnetId: vnet.outputs.subnets[0].id
     appServicePlanId: appServicePlan.outputs.id
@@ -55,9 +57,9 @@ module appService 'appService.bicep' = {
 
 // Deploy SQL Server
 module sqlServer 'sqlServer.bicep' = {
-  name: 'sql-${discriminator}-${clientName}'
+  name: 'sql-${resourceBaseName}'
   params: {
-    name: 'sql-${discriminator}-${clientName}'
+    name: 'sql-${resourceBaseName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
     adminLogin: 'adminUser'
@@ -67,9 +69,9 @@ module sqlServer 'sqlServer.bicep' = {
 
 // Deploy Storage Account
 module storageAccount 'storageAccount.bicep' = {
-  name: 'stg${discriminator}${clientName}'
+  name: 'stg${resourceBaseName}'
   params: {
-    name: toLower('stg${discriminator}${clientName}')
+    name: toLower('stg${resourceBaseName}')
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }
@@ -77,9 +79,9 @@ module storageAccount 'storageAccount.bicep' = {
 
 // Deploy Key Vault
 module keyVault 'keyVault.bicep' = {
-  name: 'pkv-${discriminator}-${clientName}'
+  name: 'pkv-${resourceBaseName}'
   params: {
-    name: 'pkv-${discriminator}-${clientName}'
+    name: 'pkv-${resourceBaseName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }
@@ -87,9 +89,12 @@ module keyVault 'keyVault.bicep' = {
 
 // Deploy App Insights
 module appInsights 'appInsights.bicep' = {
-  name: 'pai-${discriminator}-${clientName}'
+  name: 'pai-${resourceBaseName}'
   params: {
-    name: 'ai-${discriminator}-${clientName}'
+    appInsightsName: 'pai-${resourceBaseName}'
+    enablePrivateLinkScope: true
+    enablePrivateLink: true
+    name: 'pai-${resourceBaseName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }

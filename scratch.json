@@ -1,0 +1,82 @@
+{
+    "status": "Failed",
+    "error": {
+        "code": "DeploymentFailed",
+        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/main",
+        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+        "details": [
+            {
+                "code": "ResourceDeploymentFailure",
+                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
+                "details": [
+                    {
+                        "code": "DeploymentFailed",
+                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+                        "details": [
+                            {
+                                "code": "ResourceDeploymentFailure",
+                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/pai-lexsb-ClientA",
+                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
+                                "details": [
+                                    {
+                                        "code": "DeploymentFailed",
+                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/pai-lexsb-ClientA",
+                                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+                                        "details": [
+                                            {
+                                                "code": "Conflict",
+                                                "message": "Scoped resource with same linked resource id already exists in this private link scope"
+                                            },
+                                            {
+                                                "code": "Conflict",
+                                                "message": "Scoped resource with same linked resource id already exists in this private link scope"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "code": "ResourceDeploymentFailure",
+                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
+                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
+                "details": [
+                    {
+                        "code": "DeploymentFailed",
+                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
+                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+                        "details": [
+                            {
+                                "code": "ResourceDeploymentFailure",
+                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/pai-lexsb-ClientB",
+                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
+                                "details": [
+                                    {
+                                        "code": "DeploymentFailed",
+                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/pai-lexsb-ClientB",
+                                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+                                        "details": [
+                                            {
+                                                "code": "Conflict",
+                                                "message": "Scoped resource with same linked resource id already exists in this private link scope"
+                                            },
+                                            {
+                                                "code": "Conflict",
+                                                "message": "Scoped resource with same linked resource id already exists in this private link scope"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
