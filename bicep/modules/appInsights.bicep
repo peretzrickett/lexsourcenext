@@ -44,8 +44,8 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2020-08-01-preview' = {
-  name: 'la-${name}'
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+  name: 'laws-${name}'
   location: location
   properties: {
     sku: {

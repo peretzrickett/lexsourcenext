@@ -28,10 +28,6 @@
                                             {
                                                 "code": "Conflict",
                                                 "message": "Scoped resource with same linked resource id already exists in this private link scope"
-                                            },
-                                            {
-                                                "code": "NoRegisteredProviderFound",
-                                                "message": "No registered resource provider found for location 'eastus' and API version '2020-08-01-preview' for type 'workspaces'. The supported api-versions are '2015-03-20, 2015-11-01-preview, 2017-01-01-preview, 2017-03-03-preview, 2017-03-15-preview, 2017-04-26-preview, 2020-03-01-preview, 2020-08-01, 2020-10-01, 2021-03-01-privatepreview, 2021-06-01, 2021-12-01-preview, 2022-10-01, 2023-01-01-preview, 2023-09-01'. The supported locations are 'eastus, westeurope, southeastasia, australiasoutheast, westcentralus, japaneast, uksouth, centralindia, canadacentral, westus2, australiacentral, australiaeast, francecentral, koreacentral, northeurope, centralus, eastasia, eastus2, southcentralus, northcentralus, westus, ukwest, southafricanorth, brazilsouth, switzerlandnorth, switzerlandwest, germanywestcentral, australiacentral2, uaecentral, uaenorth, japanwest, brazilsoutheast, norwayeast, norwaywest, francesouth, southindia, koreasouth, jioindiacentral, jioindiawest, qatarcentral, canadaeast, westus3, swedencentral, southafricawest, germanynorth, polandcentral, israelcentral, italynorth, mexicocentral, spaincentral'."
                                             }
                                         ]
                                     }
@@ -64,10 +60,6 @@
                                             {
                                                 "code": "Conflict",
                                                 "message": "Scoped resource with same linked resource id already exists in this private link scope"
-                                            },
-                                            {
-                                                "code": "NoRegisteredProviderFound",
-                                                "message": "No registered resource provider found for location 'eastus' and API version '2020-08-01-preview' for type 'workspaces'. The supported api-versions are '2015-03-20, 2015-11-01-preview, 2017-01-01-preview, 2017-03-03-preview, 2017-03-15-preview, 2017-04-26-preview, 2020-03-01-preview, 2020-08-01, 2020-10-01, 2021-03-01-privatepreview, 2021-06-01, 2021-12-01-preview, 2022-10-01, 2023-01-01-preview, 2023-09-01'. The supported locations are 'eastus, westeurope, southeastasia, australiasoutheast, westcentralus, japaneast, uksouth, centralindia, canadacentral, westus2, australiacentral, australiaeast, francecentral, koreacentral, northeurope, centralus, eastasia, eastus2, southcentralus, northcentralus, westus, ukwest, southafricanorth, brazilsouth, switzerlandnorth, switzerlandwest, germanywestcentral, australiacentral2, uaecentral, uaenorth, japanwest, brazilsoutheast, norwayeast, norwaywest, francesouth, southindia, koreasouth, jioindiacentral, jioindiawest, qatarcentral, canadaeast, westus3, swedencentral, southafricawest, germanynorth, polandcentral, israelcentral, italynorth, mexicocentral, spaincentral'."
                                             }
                                         ]
                                     }
