@@ -69,9 +69,9 @@ module sqlServer 'sqlServer.bicep' = {
 
 // Deploy Storage Account
 module storageAccount 'storageAccount.bicep' = {
-  name: 'stg${resourceBaseName}'
+  name: resourceBaseName
   params: {
-    name: toLower('stg${resourceBaseName}')
+    name: resourceBaseName
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }

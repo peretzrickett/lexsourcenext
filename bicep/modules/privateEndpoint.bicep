@@ -16,7 +16,7 @@ param groupIds array
 @description('Tags to apply to the Private Endpoint')
 param tags object = {}
 
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-09-01' = {
   name: name
   location: location
   properties: {

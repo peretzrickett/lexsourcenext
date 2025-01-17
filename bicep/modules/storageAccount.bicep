@@ -36,8 +36,11 @@ param containerSoftDeleteRetentionDays int = 0
 @description('Tags to apply to the Storage Account')
 param tags object = {}
 
+var storageAccountName = toLower(replace('${name}', '-', ''))
+var privateEndpointName = 'pe-${storageAccountName}'
+
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
-  name: name
+  name: storageAccountName
   location: location
   sku: {
     name: skuName
@@ -70,9 +73,9 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2021-09-01'
 
 // Private Endpoint for Storage Account (blob access)
 module privateEndpoint 'privateEndpoint.bicep' = {
-  name: 'pe-${name}'
+  name: privateEndpointName
   params: {
-    name: 'pe-${name}'
+    name: privateEndpointName
     location: location
     privateLinkServiceId: storageAccount.id
     subnetId: subnetId
