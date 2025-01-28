@@ -1,8 +1,11 @@
+@description('Name of the Log Analytics Workspace')
+param logAnalyticsWorkspaceName string
+
+@description('Location for the resources')
+param location string
+
 @description('Name of the Application Insights instance')
 param name string
-
-@description('Location of the Application Insights instance')
-param location string
 
 @description('Subnet ID for Private Link')
 param subnetId string
@@ -42,19 +45,24 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     publicNetworkAccessForQuery: restrictPublicAccess ? 'Disabled' : 'Enabled'
     IngestionMode: 'ApplicationInsights'
   }
+  dependsOn: [
+    logAnalyticsWorkspace
+  ]
 }
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
-  name: 'laws-${name}'
+// Log Analytics Workspace
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+  name: logAnalyticsWorkspaceName
   location: location
   properties: {
+    retentionInDays: 30
     sku: {
       name: 'PerGB2018'
     }
   }
 }
 
-resource privateLinkScope 'Microsoft.Insights/privateLinkScopes@2021-09-01' = if (enablePrivateLinkScope) {
+resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-preview' = if (enablePrivateLinkScope) {
   name: 'pls-${name}'
   location: 'global'
   properties: {
@@ -65,18 +73,15 @@ resource privateLinkScope 'Microsoft.Insights/privateLinkScopes@2021-09-01' = if
   }
 }
 
-resource privateLinkScopeAssociation 'Microsoft.Insights/privateLinkScopes/scopedResources@2021-09-01' = if (enablePrivateLink) {
-  name: '${appInsightsName}-association'
-  parent: privateLinkScope
-  properties: {
-    linkedResourceId: appInsights.id
-  }
+resource privateLinkScopeAssociation 'microsoft.insights/components/linkedStorageAccounts@2020-03-01-preview' = if (enablePrivateLink) {
+  name: 'item'
+  parent: appInsights
 }
 
-// Link Application Insights to Private Link Scope
-resource scopedResources 'Microsoft.Insights/privateLinkScopes/scopedResources@2021-09-01' = if (enablePrivateLink) {
-  name: 'azuremonitor'
-  parent: privateLinkScope
+// Scoped Resource for Application Insights
+resource scopedResource 'microsoft.insights/components/analyticsItems@2015-05-01' = if (enablePrivateLink) {
+  name: 'item'
+  parent: appInsights
   properties: {
     linkedResourceId: appInsights.id
   }
@@ -109,3 +114,5 @@ output appInsightsId string = appInsights.id
 @description('The Private Link Scope resource Id')
 output privateLinkScopeId string = enablePrivateLinkScope ? privateLinkScope.id : ''
 
+@description('The Private Link Scope Association resource Id')
+output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.id

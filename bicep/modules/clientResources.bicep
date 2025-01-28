@@ -97,5 +97,6 @@ module appInsights 'appInsights.bicep' = {
     name: 'pai-${resourceBaseName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
+    logAnalyticsWorkspaceName: 'law-${resourceBaseName}'
   }
 }
