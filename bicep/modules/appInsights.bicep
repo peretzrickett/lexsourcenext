@@ -37,8 +37,8 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     Application_Type: applicationType
     publicNetworkAccessForIngestion: restrictPublicAccess ? 'Disabled' : 'Enabled'
     publicNetworkAccessForQuery: restrictPublicAccess ? 'Disabled' : 'Enabled'
-    IngestionMode: 'LogAnalytics'
     WorkspaceResourceId: logAnalyticsWorkspace.id
+    IngestionMode: 'LogAnalytics' 
   }
 }
 
@@ -69,6 +69,9 @@ resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-previ
 resource scopedResource 'microsoft.insights/privateLinkScopes/scopedResources@2021-07-01-preview' = if (enablePrivateLink) {
   name: privateLinkScope.name
   parent: privateLinkScope
+  properties: {
+    linkedResourceId: appInsights.id
+  }
 }
 
 // Private Endpoint for App Insights
