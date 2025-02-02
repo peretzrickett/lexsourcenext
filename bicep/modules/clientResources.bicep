@@ -18,6 +18,7 @@ var resourceBaseName = '${discriminator}-${clientName}'
 // Deploy VNet
 module vnet 'vnet.bicep' = {
   name: 'vnet-${resourceBaseName}'
+  scope: resourceGroup('rg-${clientName}')
   params: {
     name: 'vnet-${resourceBaseName}'
     location: location
@@ -32,6 +33,7 @@ module vnet 'vnet.bicep' = {
 // Deploy App Service Plan
 module appServicePlan 'appServicePlan.bicep' = {
   name: 'asp-${resourceBaseName}'
+  scope: resourceGroup('rg-${clientName}')
   params: {
     name: 'asp-${resourceBaseName}'
     location: location
@@ -47,6 +49,7 @@ module appServicePlan 'appServicePlan.bicep' = {
 // Deploy App Service
 module appService 'appService.bicep' = {
   name: 'app-${resourceBaseName}'
+  scope: resourceGroup('rg-${clientName}')
   params: {
     name: 'app-${resourceBaseName}'
     location: location
@@ -57,6 +60,7 @@ module appService 'appService.bicep' = {
 
 // Deploy SQL Server
 module sqlServer 'sqlServer.bicep' = {
+  scope: resourceGroup('rg-${clientName}')
   name: 'sql-${resourceBaseName}'
   params: {
     name: 'sql-${resourceBaseName}'
@@ -70,6 +74,7 @@ module sqlServer 'sqlServer.bicep' = {
 // Deploy Storage Account
 module storageAccount 'storageAccount.bicep' = {
   name: resourceBaseName
+  scope: resourceGroup('rg-${clientName}')
   params: {
     name: resourceBaseName
     location: location
@@ -80,6 +85,7 @@ module storageAccount 'storageAccount.bicep' = {
 // Deploy Key Vault
 module keyVault 'keyVault.bicep' = {
   name: 'pkv-${resourceBaseName}'
+  scope: resourceGroup('rg-${clientName}')
   params: {
     name: 'pkv-${resourceBaseName}'
     location: location
@@ -90,6 +96,7 @@ module keyVault 'keyVault.bicep' = {
 // Deploy App Insights
 module appInsights 'appInsights.bicep' = {
   name: 'pai-${resourceBaseName}'
+  scope: resourceGroup('rg-${clientName}')
   params: {
     enablePrivateLinkScope: true
     enablePrivateLink: true

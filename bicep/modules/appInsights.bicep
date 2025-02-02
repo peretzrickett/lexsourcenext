@@ -38,10 +38,8 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     publicNetworkAccessForIngestion: restrictPublicAccess ? 'Disabled' : 'Enabled'
     publicNetworkAccessForQuery: restrictPublicAccess ? 'Disabled' : 'Enabled'
     IngestionMode: 'ApplicationInsights'
+    WorkspaceResourceId: logAnalyticsWorkspace.id
   }
-  dependsOn: [
-    logAnalyticsWorkspace
-  ]
 }
 
 // Log Analytics Workspace
@@ -58,7 +56,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09
 
 resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-preview' = if (enablePrivateLinkScope) {
   name: 'pls-${name}'
-  location: 'global'
+  location: location
   properties: {
     accessModeSettings: {
       ingestionAccessMode: 'PrivateOnly'
@@ -78,6 +76,7 @@ resource scopedResource 'microsoft.insights/components/analyticsItems@2015-05-01
   parent: appInsights
   properties: {
     linkedResourceId: appInsights.id
+    groupIds: [ 'azuremonitor' ]
   }
 }
 
@@ -92,6 +91,9 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     groupIds: [ 'azuremonitor' ]
     tags: tags
   }
+  dependsOn: [
+    appInsights
+  ] 
 }
 @description('The resource ID of the App Insights')
 output id string = appInsights.id
