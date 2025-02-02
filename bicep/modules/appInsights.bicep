@@ -29,7 +29,7 @@ param restrictPublicAccess bool = true
 param enablePrivateLink bool
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: 'pai-{name}'
+  name: 'pai-${name}'
   location: location
   kind: applicationType
   tags: tags
@@ -37,7 +37,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     Application_Type: applicationType
     publicNetworkAccessForIngestion: restrictPublicAccess ? 'Disabled' : 'Enabled'
     publicNetworkAccessForQuery: restrictPublicAccess ? 'Disabled' : 'Enabled'
-    IngestionMode: 'ApplicationInsights'
+    IngestionMode: 'LogAnalytics'
     WorkspaceResourceId: logAnalyticsWorkspace.id
   }
 }
@@ -56,7 +56,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09
 
 resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-preview' = if (enablePrivateLinkScope) {
   name: 'pls-${name}'
-  location: location
+  location: 'global'
   properties: {
     accessModeSettings: {
       ingestionAccessMode: 'PrivateOnly'
@@ -65,15 +65,10 @@ resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-previ
   }
 }
 
-resource privateLinkScopeAssociation 'microsoft.insights/components/linkedStorageAccounts@2020-03-01-preview' = if (enablePrivateLink) {
-  name: 'item'
-  parent: appInsights
-}
-
 // Scoped Resource for Application Insights
-resource scopedResource 'microsoft.insights/components/analyticsItems@2015-05-01' = if (enablePrivateLink) {
-  name: 'item'
-  parent: appInsights
+resource scopedResource 'microsoft.insights/privateLinkScopes/scopedResources@2021-07-01-preview' = if (enablePrivateLink) {
+  name: privateLinkScope.name
+  parent: privateLinkScope
 }
 
 // Private Endpoint for App Insights

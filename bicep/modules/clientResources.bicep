@@ -73,10 +73,10 @@ module sqlServer 'sqlServer.bicep' = {
 
 // Deploy Storage Account
 module storageAccount 'storageAccount.bicep' = {
-  name: resourceBaseName
+  name: 'stg${resourceBaseName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
-    name: resourceBaseName
+    name: 'stg${resourceBaseName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }
@@ -100,7 +100,7 @@ module appInsights 'appInsights.bicep' = {
   params: {
     enablePrivateLinkScope: true
     enablePrivateLink: true
-    name: 'pai-${resourceBaseName}'
+    name: resourceBaseName
     location: location
     subnetId: vnet.outputs.subnets[1].id
   }
