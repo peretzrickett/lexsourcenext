@@ -35,7 +35,7 @@ param appInsightsName string
 param enablePrivateLink bool
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: name
+  name: 'pai-{name}'
   location: location
   kind: applicationType
   tags: tags
@@ -52,7 +52,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: logAnalyticsWorkspaceName
+  name: 'law-${logAnalyticsWorkspaceName}'
   location: location
   properties: {
     retentionInDays: 30
