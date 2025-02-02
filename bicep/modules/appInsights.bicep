@@ -1,6 +1,3 @@
-@description('Name of the Log Analytics Workspace')
-param logAnalyticsWorkspaceName string
-
 @description('Location for the resources')
 param location string
 
@@ -28,9 +25,6 @@ param enablePrivateLinkScope bool = true
 @description('Restrict public access to Application Insights')
 param restrictPublicAccess bool = true
 
-@description('Name of the Application Insights instance')
-param appInsightsName string
-
 @description('Enable Private Link Scope for the Application Insights instance')
 param enablePrivateLink bool
 
@@ -52,7 +46,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: 'law-${logAnalyticsWorkspaceName}'
+  name: 'law-${name}'
   location: location
   properties: {
     retentionInDays: 30

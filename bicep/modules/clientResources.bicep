@@ -91,12 +91,10 @@ module keyVault 'keyVault.bicep' = {
 module appInsights 'appInsights.bicep' = {
   name: 'pai-${resourceBaseName}'
   params: {
-    appInsightsName: 'pai-${resourceBaseName}'
     enablePrivateLinkScope: true
     enablePrivateLink: true
     name: 'pai-${resourceBaseName}'
     location: location
     subnetId: vnet.outputs.subnets[1].id
-    logAnalyticsWorkspaceName: 'law-${resourceBaseName}'
   }
 }
