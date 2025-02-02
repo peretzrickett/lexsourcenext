@@ -74,10 +74,6 @@ resource privateLinkScopeAssociation 'microsoft.insights/components/linkedStorag
 resource scopedResource 'microsoft.insights/components/analyticsItems@2015-05-01' = if (enablePrivateLink) {
   name: 'item'
   parent: appInsights
-  properties: {
-    linkedResourceId: appInsights.id
-    groupIds: [ 'azuremonitor' ]
-  }
 }
 
 // Private Endpoint for App Insights
