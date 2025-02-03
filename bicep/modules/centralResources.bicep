@@ -22,6 +22,9 @@ param subnets array = [
   { name: 'OtherServices', addressPrefix: '10.0.2.0/24' }
 ]
 
+@description('Client resource names')
+param clients array
+
 // Deploy the central VNet
 module centralVNet 'vnet.bicep' = {
   name: 'centralVNet'
@@ -33,12 +36,24 @@ module centralVNet 'vnet.bicep' = {
   }
 }
 
+module peering 'vnetPeering.bicep' = [for client in clients: {
+  name: 'vnetPeering-${client.name}'
+  params: {
+    centralVnetId: resourceId('Microsoft.Network/virtualNetworks', centralVNet.name)
+    spokeVnetId: resourceId('Microsoft.Network/virtualNetworks', client.name)
+  }
+}] 
+
 // Deploy Azure Front Door
 module frontDoor 'frontDoor.bicep' = {
   name: 'frontDoor'
   params: {
     name: frontDoorName
   }
+  dependsOn: [
+    centralVNet
+    peering
+  ]
 }
 
 // Deploy Azure Firewall
@@ -49,6 +64,9 @@ module firewall 'firewall.bicep' = {
     location: location
     subnetId: centralVNet.outputs.subnets[0].id
   }
+  dependsOn: [
+    peering
+  ]
 }
 
 // Deploy Sentinel (Log Analytics Workspace)
@@ -58,4 +76,8 @@ module sentinel 'sentinel.bicep' = {
     name: sentinelWorkspaceName
     location: location
   }
+  dependsOn: [
+    centralVNet
+    peering
+  ]
 }

@@ -34,9 +34,11 @@ module centralResources 'modules/centralResources.bicep' = {
   params: {
     location: location
     discriminator: discriminator
+    clients: clients
   }
   dependsOn: [
     centralResourceGroup
+    clientResources
   ]
 }
 
@@ -55,3 +57,4 @@ module clientResources 'modules/clientResources.bicep' = [for client in clients:
     clientResourceGroups
   ]
 }]
+

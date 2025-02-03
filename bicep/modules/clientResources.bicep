@@ -16,7 +16,7 @@ param discriminator string
 var resourceBaseName = '${discriminator}-${clientName}'
 
 // Deploy VNet
-module vnet 'vnet.bicep' = {
+module spokeVnet 'vnet.bicep' = {
   name: 'vnet-${resourceBaseName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
@@ -53,7 +53,7 @@ module appService 'appService.bicep' = {
   params: {
     name: 'app-${resourceBaseName}'
     location: location
-    subnetId: vnet.outputs.subnets[0].id
+    subnetId: spokeVnet.outputs.subnets[0].id
     appServicePlanId: appServicePlan.outputs.id
   }
 }
@@ -65,7 +65,7 @@ module sqlServer 'sqlServer.bicep' = {
   params: {
     name: 'sql-${resourceBaseName}'
     location: location
-    subnetId: vnet.outputs.subnets[1].id
+    subnetId: spokeVnet.outputs.subnets[1].id
     adminLogin: 'adminUser'
     adminPassword: 'Password@123!' // Replace with secure param later
   }
@@ -78,7 +78,7 @@ module storageAccount 'storageAccount.bicep' = {
   params: {
     name: 'stg${resourceBaseName}'
     location: location
-    subnetId: vnet.outputs.subnets[1].id
+    subnetId: spokeVnet.outputs.subnets[1].id
   }
 }
 
@@ -89,7 +89,7 @@ module keyVault 'keyVault.bicep' = {
   params: {
     name: 'pkv-${resourceBaseName}'
     location: location
-    subnetId: vnet.outputs.subnets[1].id
+    subnetId: spokeVnet.outputs.subnets[1].id
   }
 }
 
@@ -102,6 +102,7 @@ module appInsights 'appInsights.bicep' = {
     enablePrivateLink: true
     name: resourceBaseName
     location: location
-    subnetId: vnet.outputs.subnets[1].id
+    subnetId: spokeVnet.outputs.subnets[1].id
   }
 }
+
