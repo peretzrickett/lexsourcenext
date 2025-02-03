@@ -58,3 +58,20 @@ module clientResources 'modules/clientResources.bicep' = [for client in clients:
   ]
 }]
 
+module peering 'modules/vnetPeering.bicep' = [for client in clients: {
+  name: 'vnetPeering-${client.name}'
+  scope: subscription()
+  params: {
+    clientName: client.name
+    discriminator: discriminator
+  }
+  // params: {
+  //   centralVnetId: resourceId('Microsoft.Network/virtualNetworks', 'vnet-${discriminator}-Central')
+  //   spokeVnetId: resourceId('rg-${client.name}', 'Microsoft.Network/virtualNetworks', 'vnet-${discriminator}-${client.name}')
+  // }
+  dependsOn: [
+    centralResources
+    clientResources
+  ]
+}] 
+

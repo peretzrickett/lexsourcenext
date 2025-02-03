@@ -1,31 +1,34 @@
-param centralVnetId string
-param spokeVnetId string
+targetScope = 'subscription'
 
-var centralVnetName = last(split(centralVnetId, '/'))
-var spokeVnetName = last(split(spokeVnetId, '/'))
+// param centralVnetId string
+// param spokeVnetId string
+param clientName string
+param discriminator string
 
-resource hubToSpokePeerings 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2022-09-01' = {
-  name: '${centralVnetName}-to-${spokeVnetName}'
-  properties: {
-    remoteVirtualNetwork: {
-      id: spokeVnetId
-    }
-    allowVirtualNetworkAccess: true
-    allowForwardedTraffic: true
-    allowGatewayTransit: false
-    useRemoteGateways: false
+// // Extract the spoke VNet resource group
+// var hubVnetResourceGroup = split(spokeVnetId, '/')[4] // Resource group name is at index 4
+
+// // Extract the spoke VNet resource group
+// var spokeVnetResourceGroup = split(spokeVnetId, '/')[4] // Resource group name is at index 4
+
+module hubPeering 'vnetHubPeering.bicep' = {
+  name: 'hubPeering'
+  scope: resourceGroup('rg-central')
+  params: {
+    // centralVnetId: centralVnetId
+    // spokeVnetId: spokeVnetId
+    clientName: clientName
+    discriminator: discriminator
   }
 }
 
-resource spokeToHubPeerings 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2022-09-01' = {
-  name: '${spokeVnetName}-to-${centralVnetName}'
-  properties: {
-    remoteVirtualNetwork: {
-      id: centralVnetId
-    }
-    allowVirtualNetworkAccess: true
-    allowForwardedTraffic: true
-    allowGatewayTransit: false
-    useRemoteGateways: false
+module spokePeering 'vnetSpokePeering.bicep' = {
+  name: 'spokePeering'
+  scope: resourceGroup('rg-${clientName}')
+  params: {
+    // centralVnetId: centralVnetId
+    // spokeVnetId: spokeVnetId
+    clientName: clientName
+    discriminator: discriminator
   }
 }

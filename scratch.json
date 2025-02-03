@@ -7,59 +7,73 @@
         "details": [
             {
                 "code": "ResourceDeploymentFailure",
-                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
                 "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
                 "details": [
                     {
                         "code": "DeploymentFailed",
-                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
                         "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
                         "details": [
                             {
                                 "code": "ResourceDeploymentFailure",
-                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/pai-lexsb-ClientA",
+                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/vnetPeering-ClientB",
                                 "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
                                 "details": [
                                     {
                                         "code": "DeploymentFailed",
-                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/pai-lexsb-ClientA",
+                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/vnetPeering-ClientB",
                                         "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
                                         "details": [
                                             {
-                                                "code": "BadRequest",
-                                                "message": "Value cannot be null.\r\nParameter name: properties"
+                                                "code": "ResourceDeploymentFailure",
+                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/hubPeering",
+                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
+                                                "details": [
+                                                    {
+                                                        "code": "DeploymentFailed",
+                                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/hubPeering",
+                                                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+                                                        "details": [
+                                                            {
+                                                                "code": "ResourceNotFound",
+                                                                "message": "The Resource 'Microsoft.Network/virtualNetworks/vnet-lexsb-Central' under resource group 'rg-ClientB' was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
                                             }
                                         ]
                                     }
                                 ]
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "code": "ResourceDeploymentFailure",
-                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
-                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                "details": [
-                    {
-                        "code": "DeploymentFailed",
-                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
-                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
-                        "details": [
+                            },
                             {
                                 "code": "ResourceDeploymentFailure",
-                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/pai-lexsb-ClientB",
+                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/vnetPeering-ClientA",
                                 "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
                                 "details": [
                                     {
                                         "code": "DeploymentFailed",
-                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/pai-lexsb-ClientB",
+                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/vnetPeering-ClientA",
                                         "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
                                         "details": [
                                             {
-                                                "code": "BadRequest",
-                                                "message": "Value cannot be null.\r\nParameter name: properties"
+                                                "code": "ResourceDeploymentFailure",
+                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/hubPeering",
+                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
+                                                "details": [
+                                                    {
+                                                        "code": "DeploymentFailed",
+                                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/hubPeering",
+                                                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+                                                        "details": [
+                                                            {
+                                                                "code": "ResourceNotFound",
+                                                                "message": "The Resource 'Microsoft.Network/virtualNetworks/vnet-lexsb-Central' under resource group 'rg-ClientA' was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
                                             }
                                         ]
                                     }

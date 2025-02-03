@@ -36,14 +36,6 @@ module centralVNet 'vnet.bicep' = {
   }
 }
 
-module peering 'vnetPeering.bicep' = [for client in clients: {
-  name: 'vnetPeering-${client.name}'
-  params: {
-    centralVnetId: resourceId('Microsoft.Network/virtualNetworks', centralVNet.name)
-    spokeVnetId: resourceId('Microsoft.Network/virtualNetworks', client.name)
-  }
-}] 
-
 // Deploy Azure Front Door
 module frontDoor 'frontDoor.bicep' = {
   name: 'frontDoor'
@@ -52,7 +44,6 @@ module frontDoor 'frontDoor.bicep' = {
   }
   dependsOn: [
     centralVNet
-    peering
   ]
 }
 
@@ -64,9 +55,6 @@ module firewall 'firewall.bicep' = {
     location: location
     subnetId: centralVNet.outputs.subnets[0].id
   }
-  dependsOn: [
-    peering
-  ]
 }
 
 // Deploy Sentinel (Log Analytics Workspace)
@@ -78,6 +66,5 @@ module sentinel 'sentinel.bicep' = {
   }
   dependsOn: [
     centralVNet
-    peering
   ]
 }
