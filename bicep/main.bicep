@@ -18,13 +18,13 @@ module centralResourceGroup 'modules/resourceGroup.bicep' = {
   }
 }
 
-module managedIdentity 'modules/managedIdentity.bicep' = {
-  name: 'managedIdentity'
-  scope: resourceGroup('rg-central')
-  params: {
-    name: 'uami-deployment-scripts'
-  }
-}
+// module managedIdentity 'modules/managedIdentity.bicep' = {
+//   name: 'managedIdentity'
+//   scope: resourceGroup('rg-central')
+//   params: {
+//     name: 'uami-deployment-scripts'
+//   }
+// }
 
 // Create resource groups for each client at the subscription level
 module clientResourceGroups 'modules/resourceGroup.bicep' = [for client in clients: {
@@ -72,13 +72,24 @@ module peering 'modules/vnetPeering.bicep' = [for client in clients: {
     clientName: client.name
     discriminator: discriminator
   }
-  // params: {
-  //   centralVnetId: resourceId('Microsoft.Network/virtualNetworks', 'vnet-${discriminator}-Central')
-  //   spokeVnetId: resourceId('rg-${client.name}', 'Microsoft.Network/virtualNetworks', 'vnet-${discriminator}-${client.name}')
-  // }
   dependsOn: [
     centralResources
     clientResources
   ]
 }] 
+
+// module nsgs 'modules/nsg.bicep' = [for client in clients: {
+//   name: 'nsg-${discriminator}-${client.name}'
+//   scope: resourceGroup('rg-${client.name}')
+//   params: {
+//     clientName: client.name
+//     discriminator: discriminator
+//     location: location
+//     frontDoorPrivateIp: '10.0.2.0/24'
+//   }
+//   dependsOn: [
+//     centralResources
+//     clientResources
+//   ]
+// }] 
 

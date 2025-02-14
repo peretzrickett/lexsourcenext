@@ -4,6 +4,9 @@ param name string
 @description('Location for all resources')
 param location string
 
+@description('Distinguished qualifier for resources')
+param discriminator string
+
 @description('Address prefixes for the virtual network')
 param addressPrefixes array
 
@@ -23,19 +26,24 @@ param privateDnsZoneNames array = [
   'privatelink.file.${environment().suffixes.storage}'      // Storage File Shares
 ]
 
+var vnetName = 'vnet-${discriminator}-${name}'
+
 // Create the virtual network resource
 resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
-  name: name
+  name: vnetName
   location: location
   properties: {
     addressSpace: {
       addressPrefixes: addressPrefixes
     }
     subnets: [
-      for subnet in subnets: {
+      for (subnet, index) in subnets: {
         name: subnet.name
         properties: {
           addressPrefix: subnet.addressPrefix
+          networkSecurityGroup: enablePrivateDns ? {
+            id: nsg.outputs.nsgIds[index]
+          } : null
         }
       }
     ]
@@ -50,7 +58,7 @@ resource privateDnsZones 'Microsoft.Network/privateDnsZones@2020-06-01' = [for z
 
 // Link Private DNS Zones to VNet
 resource privateDnsLinks 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = [for (zoneName, index) in privateDnsZoneNames: if (enablePrivateDns) {
-  name: 'dnsl-${name}-${index}'  // Unique name using loop index
+  name: 'dnsl-${vnetName}-${index}'  // Unique name using loop index
   parent: privateDnsZones[index]  // Use the correct array index
   location: 'global'
   properties: {
@@ -60,6 +68,17 @@ resource privateDnsLinks 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@
     registrationEnabled: false
   }
 }]
+
+module nsg 'nsg.bicep' = if (enablePrivateDns) {
+  name: 'nsg-${discriminator}-${name}'
+  params: {
+    location: location
+    clientName: name
+    discriminator: discriminator
+    frontDoorPrivateIp: '10.0.2.0/24'
+  }
+}
+
 
 @description('The subnet IDs of the virtual network')
 output subnets array = [

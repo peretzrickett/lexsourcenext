@@ -26,8 +26,9 @@ param subnets array = [
 module centralVNet 'vnet.bicep' = {
   name: 'centralVNet'
   params: {
-    name: 'vnet-${discriminator}-Central'
+    name: 'Central'
     location: location
+    discriminator: discriminator
     addressPrefixes: [centralVNetCidr]
     subnets: subnets
     enablePrivateDns: false
@@ -39,6 +40,7 @@ module frontDoor 'frontDoor.bicep' = {
   name: 'frontDoor'
   params: {
     name: frontDoorName
+    discriminator: discriminator
   }
   dependsOn: [
     centralVNet

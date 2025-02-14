@@ -18,8 +18,9 @@ module spokeVnet 'vnet.bicep' = {
   name: 'vnet-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
-    name: 'vnet-${discriminator}-${clientName}'
+    name: clientName
     location: location
+    discriminator: discriminator
     addressPrefixes: [cidr]
     subnets: [
       { name: 'FrontEnd', addressPrefix: subnets.frontEnd }
