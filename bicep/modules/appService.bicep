@@ -1,28 +1,17 @@
-@description('Name of the App Service')
-param name string
-
 @description('Location where the App Service will be deployed')
 param location string
 
+@description('Name of the client')
+param clientName string
+
+@description('Distinguished qualifier for resources')
+param discriminator string
 
 @description('Subnet ID for Private Link')
 param subnetId string
 
 @description('ID of the App Service Plan')
 param appServicePlanId string
-
-@description('Runtime stack for the App Service (e.g., DOTNETCORE, NODE, JAVA)')
-@allowed([
-  'DOTNETCORE'
-  'NODE'
-  'JAVA'
-  'PYTHON'
-  'PHP'
-])
-param runtimeStack string = 'DOTNETCORE'
-
-@description('Version of the runtime stack')
-param runtimeVersion string = '7.0'
 
 @description('Tags to apply to the App Service')
 param tags object = {}
@@ -32,7 +21,7 @@ param appSettings array = []
 
 // Create the App Service resource
 resource appService 'Microsoft.Web/sites@2022-03-01' = {
-  name: name
+  name: 'app-${discriminator}-${clientName}'
   location: location
   properties: {
     serverFarmId: appServicePlanId // Link to the App Service Plan
@@ -51,13 +40,16 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
 
 // Private Endpoint for App Service
 module privateEndpoint 'privateEndpoint.bicep' = {
-  name: 'pe-${name}'
+  name: 'pe-${appService.name}'
   params: {
-    name: 'pe-${name}'
+    name: 'pe-${appService.name}'
+    clientName: clientName
+    discriminator: discriminator
     location: location
     privateLinkServiceId: appService.id
+    privateDnsZoneName: 'privatelink.azurewebsites.net'
     subnetId: subnetId
-    groupIds: [ 'sites' ]
+    groupId: 'sites'
     tags: tags
   }
 }

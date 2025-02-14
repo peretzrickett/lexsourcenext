@@ -1,5 +1,8 @@
 @description('Name of the SQL Server')
-param name string
+param clientName string
+
+@description('Distinguished qualifier for resources')
+param discriminator string
 
 @description('Location of the SQL Server')
 param location string
@@ -18,7 +21,7 @@ param adminLogin string
 param adminPassword string
 
 resource sqlServer 'Microsoft.Sql/servers@2021-05-01-preview' = {
-  name: name
+  name: 'sql-${discriminator}-${clientName}'
   location: location
   properties: {
     publicNetworkAccess: 'Disabled'
@@ -29,13 +32,16 @@ resource sqlServer 'Microsoft.Sql/servers@2021-05-01-preview' = {
 
 // Private Endpoint for SQL Server
 module privateEndpoint 'privateEndpoint.bicep' = {
-  name: 'pe-${name}'
+  name: 'pe-${sqlServer.name}'
   params: {
-    name: 'pe-${name}'
+    clientName: clientName
+    discriminator: discriminator
+    name: 'pe-${sqlServer.name}'
     location: location
     privateLinkServiceId: sqlServer.id
+    privateDnsZoneName: 'privatelink${environment().suffixes.sqlServerHostname}'
     subnetId: subnetId
-    groupIds: [ 'sqlServer' ]
+    groupId: 'sqlServer'
     tags: tags
   }
 }

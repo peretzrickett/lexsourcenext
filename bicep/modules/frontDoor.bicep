@@ -6,7 +6,7 @@ param name string
   'Standard_AzureFrontDoor'
   'Premium_AzureFrontDoor'
 ])
-param skuTier string = 'Standard_AzureFrontDoor'
+param skuTier string = 'Premium_AzureFrontDoor'
 
 @description('Frontend endpoints for the Azure Front Door')
 param frontEndEndpoints array = []

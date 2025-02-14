@@ -1,8 +1,11 @@
 @description('Location for the resources')
 param location string
 
-@description('Name of the Application Insights instance')
-param name string
+@description('Name of the client')
+param clientName string
+
+@description('Distinguished qualifier for resources')
+param discriminator string
 
 @description('Subnet ID for Private Link')
 param subnetId string
@@ -29,7 +32,7 @@ param restrictPublicAccess bool = true
 param enablePrivateLink bool
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: 'pai-${name}'
+  name: 'pai-${discriminator}-${clientName}'
   location: location
   kind: applicationType
   tags: tags
@@ -44,7 +47,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: 'law-${name}'
+  name: 'law-${discriminator}-${clientName}'
   location: location
   properties: {
     retentionInDays: 30
@@ -55,7 +58,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09
 }
 
 resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-preview' = if (enablePrivateLinkScope) {
-  name: 'pls-${name}'
+  name: 'pls-${discriminator}-${clientName}'
   location: 'global'
   properties: {
     accessModeSettings: {
@@ -76,18 +79,18 @@ resource scopedResource 'microsoft.insights/privateLinkScopes/scopedResources@20
 
 // Private Endpoint for App Insights
 module privateEndpoint 'privateEndpoint.bicep' = {
-  name: 'pe-${name}'
+  name: 'pe-${appInsights.name}'
   params: {
-    name: 'pe-${name}'
+    clientName: clientName
+    discriminator: discriminator
+    name: 'pe-${appInsights.name}'
     location: location
     privateLinkServiceId: privateLinkScope.id
+    privateDnsZoneName: 'privatelink.insights.azure.com'
     subnetId: subnetId
-    groupIds: [ 'azuremonitor' ]
+    groupId: 'azuremonitor'
     tags: tags
   }
-  dependsOn: [
-    appInsights
-  ] 
 }
 @description('The resource ID of the App Insights')
 output id string = appInsights.id

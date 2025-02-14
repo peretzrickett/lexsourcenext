@@ -1,5 +1,8 @@
 @description('Name of the Storage Account')
-param name string
+param clientName string
+
+@description('Distinguished qualifier for resources')
+param discriminator string
 
 @description('Location where the Storage Account will be created')
 param location string
@@ -36,7 +39,7 @@ param containerSoftDeleteRetentionDays int = 0
 @description('Tags to apply to the Storage Account')
 param tags object = {}
 
-var storageAccountName = toLower(replace('${name}', '-', ''))
+var storageAccountName = 'stg${discriminator}${clientName}'
 var privateEndpointName = 'pe-${storageAccountName}'
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
@@ -75,11 +78,14 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2021-09-01'
 module privateEndpoint 'privateEndpoint.bicep' = {
   name: privateEndpointName
   params: {
+    clientName: clientName
+    discriminator: discriminator
     name: privateEndpointName
     location: location
     privateLinkServiceId: storageAccount.id
+    privateDnsZoneName: 'privatelink.${environment().suffixes.storage}'
     subnetId: subnetId
-    groupIds: [ 'blob' ]
+    groupId: 'blob'
     tags: tags
   }
 }

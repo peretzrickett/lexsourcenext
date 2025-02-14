@@ -22,9 +22,6 @@ param subnets array = [
   { name: 'OtherServices', addressPrefix: '10.0.2.0/24' }
 ]
 
-@description('Client resource names')
-param clients array
-
 // Deploy the central VNet
 module centralVNet 'vnet.bicep' = {
   name: 'centralVNet'
@@ -33,6 +30,7 @@ module centralVNet 'vnet.bicep' = {
     location: location
     addressPrefixes: [centralVNetCidr]
     subnets: subnets
+    enablePrivateDns: false
   }
 }
 

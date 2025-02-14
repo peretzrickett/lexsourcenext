@@ -1,5 +1,8 @@
-@description('Name of the Key Vault')
-param name string
+@description('Name of the client')
+param clientName string
+
+@description('Distinguished qualifier for resources')
+param discriminator string
 
 @description('Location of the Key Vault')
 param location string
@@ -20,17 +23,15 @@ param accessPolicies array = []
 @description('Soft delete retention period in days (minimum 7 days)')
 param softDeleteRetentionDays int = 7
 
-@description('Workload type (dev or production)')
-param workloadType string = 'dev'
-
 @description('Enable purge protection for the Key Vault')
 param enablePurgeProtection bool = true
 
 @description('Tags to apply to the Key Vault')
 param tags object = {}
 
+// Create the Key Vault resource
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
-  name: name
+  name: 'pkv-${discriminator}-${clientName}'
   location: location
   properties: {
     sku: {
@@ -48,19 +49,27 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
 
 // Private Endpoint for Key Vault
 module privateEndpoint 'privateEndpoint.bicep' = {
-  name: 'pe-${name}'
+  name: 'pe-${keyVault.name}'
   params: {
-    name: 'pe-${name}'
+    clientName: clientName
+    discriminator: discriminator
+    name: 'pe-${keyVault.name}'
     location: location
     privateLinkServiceId: keyVault.id
+    privateDnsZoneName: 'privatelink.vaultcore.azure.net'
     subnetId: subnetId
-    groupIds: [ 'vault' ]
+    groupId: 'vault'
     tags: tags
   }
 }
 
+@description('The resource ID of the Key Vault')
 output id string = keyVault.id
+
+@description('The URI of the Key Vault')
 output vaultUri string = keyVault.properties.vaultUri
+
+@description('The name of the Key Vault')
 output name string = keyVault.name
 
 

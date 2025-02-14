@@ -18,6 +18,14 @@ module centralResourceGroup 'modules/resourceGroup.bicep' = {
   }
 }
 
+module managedIdentity 'modules/managedIdentity.bicep' = {
+  name: 'managedIdentity'
+  scope: resourceGroup('rg-central')
+  params: {
+    name: 'uami-deployment-scripts'
+  }
+}
+
 // Create resource groups for each client at the subscription level
 module clientResourceGroups 'modules/resourceGroup.bicep' = [for client in clients: {
   name: 'rg-${client.name}'
@@ -34,7 +42,6 @@ module centralResources 'modules/centralResources.bicep' = {
   params: {
     location: location
     discriminator: discriminator
-    clients: clients
   }
   dependsOn: [
     centralResourceGroup

@@ -13,14 +13,12 @@ param subnets object
 @description('Distinguished qualifier for resources')
 param discriminator string
 
-var resourceBaseName = '${discriminator}-${clientName}'
-
 // Deploy VNet
 module spokeVnet 'vnet.bicep' = {
-  name: 'vnet-${resourceBaseName}'
+  name: 'vnet-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
-    name: 'vnet-${resourceBaseName}'
+    name: 'vnet-${discriminator}-${clientName}'
     location: location
     addressPrefixes: [cidr]
     subnets: [
@@ -32,10 +30,10 @@ module spokeVnet 'vnet.bicep' = {
 
 // Deploy App Service Plan
 module appServicePlan 'appServicePlan.bicep' = {
-  name: 'asp-${resourceBaseName}'
+  name: 'asp-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
-    name: 'asp-${resourceBaseName}'
+    name: 'asp-${discriminator}-${clientName}'
     location: location
     sku: {
       name: 'S1'
@@ -48,10 +46,11 @@ module appServicePlan 'appServicePlan.bicep' = {
 
 // Deploy App Service
 module appService 'appService.bicep' = {
-  name: 'app-${resourceBaseName}'
+  name: 'app-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
-    name: 'app-${resourceBaseName}'
+    clientName: clientName
+    discriminator: discriminator
     location: location
     subnetId: spokeVnet.outputs.subnets[0].id
     appServicePlanId: appServicePlan.outputs.id
@@ -61,9 +60,10 @@ module appService 'appService.bicep' = {
 // Deploy SQL Server
 module sqlServer 'sqlServer.bicep' = {
   scope: resourceGroup('rg-${clientName}')
-  name: 'sql-${resourceBaseName}'
+  name: 'sql-${discriminator}-${clientName}'
   params: {
-    name: 'sql-${resourceBaseName}'
+    clientName: clientName
+    discriminator: discriminator
     location: location
     subnetId: spokeVnet.outputs.subnets[1].id
     adminLogin: 'adminUser'
@@ -73,10 +73,11 @@ module sqlServer 'sqlServer.bicep' = {
 
 // Deploy Storage Account
 module storageAccount 'storageAccount.bicep' = {
-  name: 'stg${resourceBaseName}'
+  name: 'stg${discriminator}${clientName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
-    name: 'stg${resourceBaseName}'
+    clientName: clientName
+    discriminator: discriminator
     location: location
     subnetId: spokeVnet.outputs.subnets[1].id
   }
@@ -84,10 +85,11 @@ module storageAccount 'storageAccount.bicep' = {
 
 // Deploy Key Vault
 module keyVault 'keyVault.bicep' = {
-  name: 'pkv-${resourceBaseName}'
+  name: 'pkv-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
-    name: 'pkv-${resourceBaseName}'
+    clientName: clientName
+    discriminator: discriminator
     location: location
     subnetId: spokeVnet.outputs.subnets[1].id
   }
@@ -95,12 +97,13 @@ module keyVault 'keyVault.bicep' = {
 
 // Deploy App Insights
 module appInsights 'appInsights.bicep' = {
-  name: 'pai-${resourceBaseName}'
+  name: 'pai-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
+    discriminator: discriminator
     enablePrivateLinkScope: true
     enablePrivateLink: true
-    name: resourceBaseName
+    clientName: clientName
     location: location
     subnetId: spokeVnet.outputs.subnets[1].id
   }
