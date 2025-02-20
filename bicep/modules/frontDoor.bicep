@@ -2,7 +2,7 @@
 param name string
 
 @description('Names of the clients to create Front Door resources for')
-param clientNames array = []
+param clientNames array
 
 @description('Distinguished qualifier for resources')
 param discriminator string
@@ -29,7 +29,7 @@ resource frontDoor 'Microsoft.Cdn/profiles@2021-06-01' = {
 }
 
 // Create Backend Pools for each client
-resource afdBackendPools 'Microsoft.Cdn/profiles/afdOriginGroups@2021-06-01' = [for clientName in clientNames: {
+resource afdBackendPools 'Microsoft.Cdn/profiles/afdOriginGroups@2021-06-01' = [for (clientName, index) in clientNames: {
   name: 'afd-backend-${discriminator}-${clientName}'
   parent: frontDoor
   properties: {
@@ -39,48 +39,62 @@ resource afdBackendPools 'Microsoft.Cdn/profiles/afdOriginGroups@2021-06-01' = [
       successfulSamplesRequired: 3
     }
   }
+  dependsOn: [
+    frontDoor
+  ]
 }]
 
-// Create Origins (App Services via Private DNS) for each client
-resource afdOrigins 'Microsoft.Cdn/profiles/afdOriginGroups/origins@2021-06-01' = [for clientName in clientNames: {
-  name: 'afd-origin-${discriminator}-${clientName}'
-  parent: afdBackendPools[clientName]
-  properties: {
-    hostName: 'app-${clientName}.privatelink.azurewebsites.net'  // Private DNS name
-    originHostHeader: 'app-${clientName}.privatelink.azurewebsites.net'
-    httpPort: 80
-    httpsPort: 443
-    enabledState: 'Enabled'
-  }
-}]
+// // Create Origins (App Services via Private DNS) for each client
+// resource afdOrigins 'Microsoft.Cdn/profiles/afdOriginGroups/origins@2021-06-01' = [for (clientName, index) in clientNames: {
+//   name: 'afd-origin-${discriminator}-${clientName}'
+//   parent: afdBackendPools[index]
+//   properties: {
+//     hostName: 'app-${discriminator}-${clientName}.azurewebsites.net'  // Private DNS name
+//     originHostHeader: 'app-${discriminator}-${clientName}.azurewebsites.net'
+//     httpPort: 80
+//     httpsPort: 443
+//     enabledState: 'Enabled'
+//   }
+//   dependsOn: [
+//     afdBackendPools[index]
+//   ]
+// }]
 
 // Create Frontend Endpoint
-resource afdFrontend 'Microsoft.Cdn/profiles/afdEndpoints@2021-06-01' = [for clientName in clientNames: {
+resource afdFrontend 'Microsoft.Cdn/profiles/afdEndpoints@2021-06-01' = [for (clientName, index) in clientNames: {
   name: 'afd-frontend-${discriminator}-${clientName}'
   location: 'global'
   parent: frontDoor
   properties: {
     enabledState: 'Enabled'
   }
+  dependsOn: [
+    frontDoor
+  ]
 }]
 
-// Create Routing Rules for each client
-resource afdRoutingRules 'Microsoft.Cdn/profiles/afdEndpoints/routes@2021-06-01' = [for clientName in clientNames: {
-  name: 'afd-route-${discriminator}-${clientName}'
-  parent: afdFrontend[clientName]
-  properties: {
-    supportedProtocols: [
-      'Https'
-    ]
-    patternsToMatch: [
-      '/${clientName}/*'
-    ]
-    originGroup: {
-      id: afdBackendPools[clientName].id
-    }
-    forwardingProtocol: 'MatchRequest'
-  }
-}]
+// // Create Routing Rules for each client
+// resource afdRoutingRules 'Microsoft.Cdn/profiles/afdEndpoints/routes@2021-06-01' = [for (clientName, index) in clientNames: {
+//   name: 'afd-route-${discriminator}-${clientName}'
+//   parent: afdFrontend[index]
+//   properties: {
+//     supportedProtocols: [
+//       'Https'
+//     ]
+//     patternsToMatch: [
+//       '/${clientName}/*'
+//     ]
+//     originGroup: {
+//       id: afdBackendPools[index].id
+//     }
+//     forwardingProtocol: 'MatchRequest'
+//   }
+//   dependsOn: [
+//     afdBackendPools[index]
+//     afdFrontend[index]
+//     afdOrigins[index]
+//   ]
+// }]
 
 @description('The resource ID of the Azure Front Door instance')
 output id string = frontDoor.id

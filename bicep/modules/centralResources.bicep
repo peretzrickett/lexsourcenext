@@ -1,6 +1,9 @@
 @description('Location for all resources')
 param location string
 
+@description('Client Names')
+param clientNames array
+
 @description('Global Firewall Name')
 param firewallName string = 'globalFirewall'
 
@@ -39,6 +42,7 @@ module centralVNet 'vnet.bicep' = {
 module frontDoor 'frontDoor.bicep' = {
   name: 'frontDoor'
   params: {
+    clientNames: clientNames
     name: frontDoorName
     discriminator: discriminator
   }

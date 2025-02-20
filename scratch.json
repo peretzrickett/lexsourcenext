@@ -17,17 +17,23 @@
                         "details": [
                             {
                                 "code": "ResourceDeploymentFailure",
-                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralVNet",
+                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/frontDoor",
                                 "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
                                 "details": [
                                     {
                                         "code": "DeploymentFailed",
-                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralVNet",
+                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/frontDoor",
                                         "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
                                         "details": [
                                             {
-                                                "code": "DeploymentNotFound",
-                                                "message": "Deployment 'nsg-lexsb-Central' could not be found."
+                                                "code": "NotFound",
+                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Cdn/profiles/globalFrontDoor/afdOriginGroups/afd-backend-lexsb-ClientA",
+                                                "message": "{\r\n  \"Message\": \"No HTTP resource was found that matches the request URI 'https://rp.cdn.azure.net/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourcegroups/rg-central/providers/Microsoft.Cdn/profiles/globalFrontDoor/afdOriginGroups/afd-backend-lexsb-ClientA?api-version=2021-06-01'.\"\r\n}"
+                                            },
+                                            {
+                                                "code": "NotFound",
+                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Cdn/profiles/globalFrontDoor/afdOriginGroups/afd-backend-lexsb-ClientB",
+                                                "message": "{\r\n  \"Message\": \"No HTTP resource was found that matches the request URI 'https://rp.cdn.azure.net/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourcegroups/rg-central/providers/Microsoft.Cdn/profiles/globalFrontDoor/afdOriginGroups/afd-backend-lexsb-ClientB?api-version=2021-06-01'.\"\r\n}"
                                             }
                                         ]
                                     }

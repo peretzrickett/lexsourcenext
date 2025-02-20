@@ -42,6 +42,7 @@ module centralResources 'modules/centralResources.bicep' = {
   params: {
     location: location
     discriminator: discriminator
+    clientNames: [for client in clients: client.name]
   }
   dependsOn: [
     centralResourceGroup
@@ -77,19 +78,3 @@ module peering 'modules/vnetPeering.bicep' = [for client in clients: {
     clientResources
   ]
 }] 
-
-// module nsgs 'modules/nsg.bicep' = [for client in clients: {
-//   name: 'nsg-${discriminator}-${client.name}'
-//   scope: resourceGroup('rg-${client.name}')
-//   params: {
-//     clientName: client.name
-//     discriminator: discriminator
-//     location: location
-//     frontDoorPrivateIp: '10.0.2.0/24'
-//   }
-//   dependsOn: [
-//     centralResources
-//     clientResources
-//   ]
-// }] 
-
