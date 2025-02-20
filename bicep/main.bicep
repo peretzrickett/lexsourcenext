@@ -33,6 +33,9 @@ module clientResourceGroups 'modules/resourceGroup.bicep' = [for client in clien
     name: 'rg-${client.name}'
     location: location
   }
+  // dependsOn: [
+  //   managedIdentity
+  // ]
 }]
 
 // Deploy central resources

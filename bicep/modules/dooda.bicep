@@ -7,6 +7,12 @@ param name string
 @description('Timeout for the script execution in seconds')
 param timeout int = 120
 
+@description('Client name')
+param clientName string
+
+@description('Discriminator')
+param discriminator string
+
 // Reference the existing User Assigned Managed Identity
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: 'uami-deployment-scripts'

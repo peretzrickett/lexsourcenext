@@ -51,31 +51,29 @@ resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing 
   name: privateDnsZoneName
 }
 
-// // Get the private IP address of the Private Endpoint
-// module privateIpExtractor 'vnetIpExtractor.bicep' = {
-//   name: 'extractPrivateIp-${name}'
-//   scope: resourceGroup('rg-central')
-//   params: {
-//     name: name
-//     clientName: clientName
-//     discriminator: discriminator
-//     privateEndpointId: privateEndpoint.id
-//   }
-// }
+// Get the private IP address of the Private Endpoint
+module privateIpExtractor 'vnetIpExtractor.bicep' = {
+  name: 'extractPrivateIp-${name}'
+  scope: resourceGroup('rg-central')
+  params: {
+    name: name
+    privateEndpointId: privateEndpoint.id
+  }
+}
 
-// // Create the Private DNS A Record resource
-// resource privateDnsARecord 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
-//   name: 'a-${name}'
-//   parent: privateDnsZone
-//   properties: {
-//     ttl: 3600
-//     aRecords: [
-//       {
-//         ipv4Address: privateIpExtractor.outputs.privateIp
-//       }
-//     ]
-//   }
-// }
+// Create the Private DNS A Record resource
+resource privateDnsARecord 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
+  name: 'a-${name}'
+  parent: privateDnsZone
+  properties: {
+    ttl: 3600
+    aRecords: [
+      {
+        ipv4Address: privateIpExtractor.outputs.privateIp
+      }
+    ]
+  }
+}
 
 @description('The resource ID of the Private Endpoint')
 output id string = privateEndpoint.id
