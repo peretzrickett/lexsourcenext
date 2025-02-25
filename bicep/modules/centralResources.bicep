@@ -1,9 +1,6 @@
 @description('Location for all resources')
 param location string
 
-@description('Client Names')
-param clientNames array
-
 @description('Global Firewall Name')
 param firewallName string = 'globalFirewall'
 
@@ -38,19 +35,6 @@ module centralVNet 'vnet.bicep' = {
   }
 }
 
-// Deploy Azure Front Door
-module frontDoor 'frontDoor.bicep' = {
-  name: 'frontDoor'
-  params: {
-    clientNames: clientNames
-    name: frontDoorName
-    discriminator: discriminator
-  }
-  dependsOn: [
-    centralVNet
-  ]
-}
-
 // Deploy Azure Firewall
 module firewall 'firewall.bicep' = {
   name: 'firewall'
@@ -67,6 +51,16 @@ module sentinel 'sentinel.bicep' = {
   params: {
     name: sentinelWorkspaceName
     location: location
+  }
+  dependsOn: [
+    centralVNet
+  ]
+}
+
+module frontdoor 'frontDoor.bicep' = {
+  name: 'frontDoor'
+  params: {
+    name: frontDoorName
   }
   dependsOn: [
     centralVNet

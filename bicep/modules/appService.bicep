@@ -19,24 +19,71 @@ param tags object = {}
 @description('Environment variables (App Settings) for the App Service')
 param appSettings array = []
 
-// Create the App Service resource
+// Create the App Service resource with public access disabled
 resource appService 'Microsoft.Web/sites@2022-03-01' = {
   name: 'app-${discriminator}-${clientName}'
   location: location
   properties: {
-    serverFarmId: appServicePlanId // Link to the App Service Plan
-    publicNetworkAccess: 'Disabled'
+    serverFarmId: appServicePlanId
+    publicNetworkAccess: 'Disabled' // Disable public access
+
     siteConfig: {
+      vnetRouteAllEnabled: true // Ensure all outbound traffic follows VNet routes
+      scmIpSecurityRestrictionsUseMain: true // Apply restrictions to the SCM (Kudu) site
       appSettings: [
         for setting in appSettings: {
           name: setting.name
           value: setting.value
         }
       ]
+      ipSecurityRestrictions: [
+        {
+          name: 'AllowPrivateSubnet'
+          priority: 100
+          action: 'Allow'
+          vnetSubnetResourceId: subnetId // Ensure Private Link subnet is allowed
+        }
+        {
+          name: 'DenyPublic'
+          priority: 200
+          action: 'Deny'
+          ipAddress: '0.0.0.0/0' // Block all public traffic
+        }
+      ]
     }
+
+    httpsOnly: true  // Enforce HTTPS
   }
   tags: tags
 }
+
+// Enforce VNet integration with Private Endpoint
+resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2022-03-01' = {
+  name: 'virtualNetwork'
+  parent: appService
+  properties: {
+    subnetResourceId: subnetId  // Integrate App Service with the specified VNet
+  }
+  dependsOn: [appService]
+}
+
+resource appServiceRestrictions 'Microsoft.Web/sites/config@2022-03-01' = {
+  name: 'web'
+  parent: appService
+  properties: {
+    ipSecurityRestrictions: [
+      {
+        name: 'AllowVNetOnly'
+        action: 'Allow'
+        priority: 100
+        vnetSubnetResourceId: subnetId  // Only allow VNet traffic
+        description: 'Allow only VNet traffic'
+      }
+    ]
+  }
+  dependsOn: [vnetIntegration]
+}
+
 
 // Private Endpoint for App Service
 module privateEndpoint 'privateEndpoint.bicep' = {
@@ -48,8 +95,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     location: location
     privateLinkServiceId: appService.id
     privateDnsZoneName: 'privatelink.azurewebsites.net'
-    subnetId: subnetId
     groupId: 'sites'
+    serviceType: 'AppService'
     tags: tags
   }
 }

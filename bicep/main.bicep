@@ -45,7 +45,6 @@ module centralResources 'modules/centralResources.bicep' = {
   params: {
     location: location
     discriminator: discriminator
-    clientNames: [for client in clients: client.name]
   }
   dependsOn: [
     centralResourceGroup
@@ -69,6 +68,8 @@ module clientResources 'modules/clientResources.bicep' = [for client in clients:
   ]
 }]
 
+// Peer the central VNet with each client VNet
+@batchSize(1)
 module peering 'modules/vnetPeering.bicep' = [for client in clients: {
   name: 'vnetPeering-${client.name}'
   scope: subscription()
@@ -81,3 +82,17 @@ module peering 'modules/vnetPeering.bicep' = [for client in clients: {
     clientResources
   ]
 }] 
+
+// Deploy Azure Front Door
+module frontDoorConfiguration 'modules/frontDoorConfigure.bicep' = {
+  name: 'frontDoorConfiguration'
+  scope: resourceGroup('rg-central')
+  params: {
+    clientNames: [for client in clients: client.name] // Extract only names
+    name: 'globalFrontDoor'
+    discriminator: discriminator
+  }
+  dependsOn: [
+    peering
+  ]
+}

@@ -57,8 +57,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     location: location
     privateLinkServiceId: keyVault.id
     privateDnsZoneName: 'privatelink.vaultcore.azure.net'
-    subnetId: subnetId
     groupId: 'vault'
+    serviceType: 'KeyVault'
     tags: tags
   }
 }

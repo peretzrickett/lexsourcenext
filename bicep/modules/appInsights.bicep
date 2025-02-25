@@ -87,8 +87,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     location: location
     privateLinkServiceId: privateLinkScope.id
     privateDnsZoneName: 'privatelink.insights.azure.com'
-    subnetId: subnetId
     groupId: 'azuremonitor'
+    serviceType: 'AppInsights'
     tags: tags
   }
 }

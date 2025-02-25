@@ -25,7 +25,7 @@ param privateDnsZoneNames array = [
   'privatelink.blob.${environment().suffixes.storage}'      // Storage Blob
   'privatelink.file.${environment().suffixes.storage}'      // Storage File Shares
   'privatelink.insights.azure.com'
-  'privatelink.core.windows.net'
+  'privatelink.${environment().suffixes.storage}'
 ]
 
 var vnetName = 'vnet-${discriminator}-${name}'
@@ -48,6 +48,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
           networkSecurityGroup: enablePrivateDns ? {
             id: nsg.outputs.nsgIds[index]
           } : null
+          delegations: (enablePrivateDns && subnet.name == 'FrontEnd') ? [
+            {
+              name: 'MicrosoftWebServerFarms'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ] : null
         }
       }
     ]

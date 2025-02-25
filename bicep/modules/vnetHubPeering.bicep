@@ -26,7 +26,7 @@ resource hubToSpokePeerings 'Microsoft.Network/virtualNetworks/virtualNetworkPee
     }
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: true
-    allowGatewayTransit: false
+    allowGatewayTransit: true
     useRemoteGateways: false
   }
 }

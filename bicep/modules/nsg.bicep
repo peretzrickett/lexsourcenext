@@ -53,7 +53,43 @@ resource frontendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           direction: 'Inbound'
           access: 'Allow'
           protocol: '*'
-          sourceAddressPrefix: frontDoorPrivateIp
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+        }
+      }
+      {
+        name: 'Deny-All-Inbound'
+        properties: {
+          priority: 4096
+          direction: 'Inbound'
+          access: 'Deny'
+          protocol: '*'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+        }
+      }
+    ]
+  }
+}
+
+// Create Frontend NSG (Allow only Front Door Private IP)
+resource privatelinkNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
+  name: 'nsg-${discriminator}-${clientName}-privatelink'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'Allow-FrontDoor-Private-IP'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: '*'
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
@@ -110,4 +146,5 @@ resource frontendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
 output nsgIds array = [
   frontendNsg.id
   backendNsg.id
+  privatelinkNsg.id
 ]

@@ -105,84 +105,64 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   properties: {
     azCliVersion: '2.40.0'
     scriptContent: '''
+      echo "Starting Private DNS Record Creation Script..."
+
+      # Read IPs and FQDNs from input variables
+      PRIVATE_IPS="${PRIVATE_IPS}"
+      PRIVATE_FQDNS="${PRIVATE_FQDNS}"
       RESOURCE_GROUP="${RESOURCE_GROUP}"
       DNS_ZONE_NAME="${privateDnsZoneName}"
 
-      echo "Checking for Private IPs..."
-      RETRIES=10
-      SLEEP_INTERVAL=30
-      while [[ -z "$PRIVATE_IPS" && $RETRIES -gt 0 ]]; do
-        echo "Waiting for Private Endpoint IP assignment... Retries left: $RETRIES"
-        sleep $SLEEP_INTERVAL
-        PRIVATE_IPS="$(az network private-endpoint show \
-          --name "${name}" \
-          --resource-group "${RESOURCE_GROUP}" \
-          --query 'customDnsConfigs[*].ipAddresses' --output tsv)"
-        ((RETRIES--))
-      done
+      # Split IPs and FQDNs into arrays
+      IFS=$'\n' read -r -d '' -a ip_array <<< "$PRIVATE_IPS"
+      IFS=$'\n' read -r -d '' -a fqdn_array <<< "$PRIVATE_FQDNS"
 
-      if [[ -z "$PRIVATE_IPS" ]]; then
-        echo "Error: Private Endpoint did not receive an IP address in time."
-        exit 1
-      fi
+      echo "Extracted ${#ip_array[@]} private IP(s) and ${#fqdn_array[@]} FQDN(s)."
+      echo "Private IPs: ${ip_array[*]}"
+      echo "Private FQDNs: ${fqdn_array[*]}"
 
-      # Convert IPs into an array
-      IFS=$'\n' read -r -d '' -a ips <<< "$PRIVATE_IPS"
-      IFS=$'\n' read -r -d '' -a fqdns <<< "$PRIVATE_FQDNS"
+      for fqdn in "${fqdn_array[@]}"; do
+          record_name=$(echo "$fqdn" | sed "s/.${DNS_ZONE_NAME}//")  # Extract subdomain only
+          echo "Processing DNS record: $record_name"
 
-      echo "Creating Private DNS A Records..."
-      for fqdn in "${fqdns[@]}"; do
-          for ip in "${ips[@]}"; do
-              echo "Checking if A record exists for $fqdn..."
-              existing_record=$(az network private-dns record-set a show \
+          for ip in "${ip_array[@]}"; do
+              echo "Creating A record for $record_name -> $ip"
+              az network private-dns record-set a create \
                 --resource-group "$RESOURCE_GROUP" \
                 --zone-name "$DNS_ZONE_NAME" \
-                --name "$fqdn" \
-                --query "aRecords[?ipv4Address=='$ip']" \
-                --output tsv || echo "not found")
+                --name "$record_name" \
+                --ttl 3600 || {
+                  echo "Error: Failed to create A record for $record_name"
+                  exit 1
+              }
 
-              if [[ "$existing_record" == "not found" ]]; then
-                  echo "Creating A record for $fqdn -> $ip"
-                  az network private-dns record-set a create --resource-group "$RESOURCE_GROUP" --zone-name "$DNS_ZONE_NAME" --name "$fqdn" --ttl 3600 || {
-                      echo "Error: Failed to create A record for $fqdn"
-                      exit 1
-                  }
-                  az network private-dns record-set a add-record --resource-group "$RESOURCE_GROUP" --zone-name "$DNS_ZONE_NAME" --record-set-name "$fqdn" --ipv4-address "$ip" || {
-                      echo "Error: Failed to add IP $ip to A record for $fqdn"
-                      exit 1
-                  }
-              else
-                  echo "A record for $fqdn -> $ip already exists. Skipping creation."
-              fi
+              az network private-dns record-set a add-record \
+                --resource-group "$RESOURCE_GROUP" \
+                --zone-name "$DNS_ZONE_NAME" \
+                --record-set-name "$record_name" \
+                --ipv4-address "$ip" || {
+                  echo "Error: Failed to add IP $ip to A record for $record_name"
+                  exit 1
+              }
           done
       done
 
-      echo "{\"privateDnsRecords\": \"Created A records for ${#fqdns[@]} FQDNs and ${#ips[@]} IPs\"}" > $AZ_SCRIPTS_OUTPUT_PATH
+      echo "DNS records successfully created!"
+      echo "{\"privateDnsRecords\": \"Created A records for ${#fqdn_array[@]} FQDNs and ${#ip_array[@]} IPs\"}" > $AZ_SCRIPTS_OUTPUT_PATH
     '''
     environmentVariables: [
-      {
-        name: 'RESOURCE_GROUP'
-        value: resourceGroup().name
-      }
-      {
-        name: 'PRIVATE_IPS'
-        value: join(privateIpExtractor.outputs.privateIps, '\n')
-      }
-      {
-        name: 'PRIVATE_FQDNS'
-        value: join(privateIpExtractor.outputs.privateFqdns, '\n')
-      }
-      {
-        name: 'privateDnsZoneName'
-        value: privateDnsZoneName
-      }
+      { name: 'RESOURCE_GROUP', value: resourceGroup().name }
+      { name: 'PRIVATE_IPS', value: join(privateIpExtractor.outputs.privateIps, '\n') }
+      { name: 'PRIVATE_FQDNS', value: join(privateIpExtractor.outputs.privateFqdns, '\n') }
+      { name: 'privateDnsZoneName', value: privateDnsZoneName }
     ]
-    timeout: 'PT300S' // Keeping the timeout
+    timeout: 'PT${timeout}S'
     retentionInterval: 'P1D'
   }
   dependsOn: [
     privateIpExtractor
     privateDnsZone
+    privateEndpoint
   ]
 }
 

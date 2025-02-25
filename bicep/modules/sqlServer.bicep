@@ -40,8 +40,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     location: location
     privateLinkServiceId: sqlServer.id
     privateDnsZoneName: 'privatelink${environment().suffixes.sqlServerHostname}'
-    subnetId: subnetId
     groupId: 'sqlServer'
+    serviceType: 'SqlServer'
     tags: tags
   }
 }

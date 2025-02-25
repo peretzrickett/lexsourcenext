@@ -25,6 +25,7 @@ module spokeVnet 'vnet.bicep' = {
     subnets: [
       { name: 'FrontEnd', addressPrefix: subnets.frontEnd }
       { name: 'BackEnd', addressPrefix: subnets.backEnd }
+      { name: 'PrivateLink', addressPrefix: subnets.privateLink }
     ]
   }
 }

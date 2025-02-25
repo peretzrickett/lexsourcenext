@@ -84,8 +84,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     location: location
     privateLinkServiceId: storageAccount.id
     privateDnsZoneName: 'privatelink.${environment().suffixes.storage}'
-    subnetId: subnetId
     groupId: 'blob'
+    serviceType: 'Storage'
     tags: tags
   }
 }
