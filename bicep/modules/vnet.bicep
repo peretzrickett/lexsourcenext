@@ -87,7 +87,7 @@ module nsg 'nsg.bicep' = if (enablePrivateDns) {
     location: location
     clientName: name
     discriminator: discriminator
-    frontDoorPrivateIp: '10.0.2.0/24'
+    frontDoorPrivateIp: '10.0.0.0/16'
   }
 }
 

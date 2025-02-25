@@ -53,7 +53,7 @@ resource frontendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           direction: 'Inbound'
           access: 'Allow'
           protocol: '*'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: frontDoorPrivateIp
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
@@ -89,7 +89,7 @@ resource privatelinkNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           direction: 'Inbound'
           access: 'Allow'
           protocol: '*'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: frontDoorPrivateIp
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'

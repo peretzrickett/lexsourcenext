@@ -20,6 +20,7 @@ param discriminator string
 param subnets array = [
   { name: 'AzureFirewallSubnet', addressPrefix: '10.0.1.0/24' }
   { name: 'OtherServices', addressPrefix: '10.0.2.0/24' }
+  { name: 'GatewaySubnet', addressPrefix: '10.0.3.0/26'}
 ]
 
 // Deploy the central VNet
@@ -66,3 +67,15 @@ module frontdoor 'frontDoor.bicep' = {
     centralVNet
   ]
 }
+
+// module vpn 'vpn.bicep' = {
+//   name: 'vpn'
+//   params: {
+//     location: location
+//     discriminator: discriminator
+//     addressPool: '10.0.255.0/24'
+//   }
+//   dependsOn: [
+//     centralVNet
+//   ]
+// }
