@@ -1,3 +1,4 @@
+// clientResources.bicep
 @description('Client Name')
 param clientName string
 
@@ -22,6 +23,8 @@ module spokeVnet 'vnet.bicep' = {
     location: location
     discriminator: discriminator
     addressPrefixes: [cidr]
+    enableSpokePrivateDns: true
+    enableHubPrivateDns: false
     subnets: [
       { name: 'FrontEnd', addressPrefix: subnets.frontEnd }
       { name: 'BackEnd', addressPrefix: subnets.backEnd }

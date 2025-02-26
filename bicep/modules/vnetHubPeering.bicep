@@ -1,6 +1,7 @@
+// modules/vnetHubPeering.bicep
+
 // param centralVnetId string
 // param spokeVnetId string
-
 param clientName string
 param discriminator string
 

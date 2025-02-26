@@ -1,3 +1,4 @@
+// modules/vnetSpokePeering.bicep
 param clientName string
 param discriminator string
 

@@ -1,3 +1,4 @@
+// modules/vnetIpExtractor.bicep
 @description('ID of the Private Endpoint')
 param privateEndpointId string
 
@@ -41,7 +42,7 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${resourceId(resourceGroup().name, 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-deployment-scripts')}': {}
+      '${resourceId('rg-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-deployment-scripts')}': {}
     }
   }
   properties: {

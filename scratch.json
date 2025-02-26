@@ -7,18 +7,49 @@
         "details": [
             {
                 "code": "ResourceDeploymentFailure",
-                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/frontDoor",
+                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
                 "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
                 "details": [
                     {
                         "code": "DeploymentFailed",
-                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/frontDoor",
+                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
                         "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
                         "details": [
                             {
-                                "code": "NotFound",
-                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Cdn/profiles/globalFrontDoor/afdOriginGroups/afd-og-lexsb-ClientA",
-                                "message": "{\r\n  \"Message\": \"No HTTP resource was found that matches the request URI 'https://rp.cdn.azure.net/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourcegroups/rg-central/providers/Microsoft.Cdn/profiles/globalFrontDoor/afdOriginGroups/afd-og-lexsb-ClientA?api-version=2024-02-01'.\"\r\n}"
+                                "code": "ResourceDeploymentFailure",
+                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/extractPrivateIpFromSpoke-ClientB",
+                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
+                                "details": [
+                                    {
+                                        "code": "DeploymentFailed",
+                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/extractPrivateIpFromSpoke-ClientB",
+                                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+                                        "details": [
+                                            {
+                                                "code": "FailedIdentityOperation",
+                                                "message": "Identity operation for resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-pe-app-lexsb-ClientB' failed with error 'Failed to perform resource identity operation. Status: 'BadRequest'. Response: '{\"error\":{\"code\":\"BadRequest\",\"message\":\"Resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourcegroups/rg-ClientB/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uami-deployment-scripts' was not found.\"}}'.'."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "ResourceDeploymentFailure",
+                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/extractPrivateIpFromSpoke-ClientA",
+                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
+                                "details": [
+                                    {
+                                        "code": "DeploymentFailed",
+                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/extractPrivateIpFromSpoke-ClientA",
+                                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
+                                        "details": [
+                                            {
+                                                "code": "FailedIdentityOperation",
+                                                "message": "Identity operation for resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-pe-app-lexsb-ClientA' failed with error 'Failed to perform resource identity operation. Status: 'BadRequest'. Response: '{\"error\":{\"code\":\"BadRequest\",\"message\":\"Resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourcegroups/rg-ClientA/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uami-deployment-scripts' was not found.\"}}'.'."
+                                            }
+                                        ]
+                                    }
+                                ]
                             }
                         ]
                     }

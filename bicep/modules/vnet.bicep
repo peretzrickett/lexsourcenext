@@ -1,3 +1,4 @@
+// modules/vnet.bicep
 @description('Creates a virtual network with the specified name')
 param name string
 
@@ -14,7 +15,10 @@ param addressPrefixes array
 param subnets array
 
 @description('Enable Private DNS for this VNet')
-param enablePrivateDns bool = true
+param enableSpokePrivateDns bool
+
+@description('Enable Hub Private DNS for this VNet')
+param enableHubPrivateDns bool
 
 @description('List of Private DNS Zones to create')
 param privateDnsZoneNames array = [
@@ -42,13 +46,13 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
       for (subnet, index) in subnets: {
         name: subnet.name
         properties: {
-          privateEndpointNetworkPolicies: enablePrivateDns ? 'Disabled' : null
-          privateLinkServiceNetworkPolicies: enablePrivateDns ? 'Disabled' : null
+          privateEndpointNetworkPolicies: enableSpokePrivateDns ? 'Disabled' : null
+          privateLinkServiceNetworkPolicies: enableSpokePrivateDns ? 'Disabled' : null
           addressPrefix: subnet.addressPrefix
-          networkSecurityGroup: enablePrivateDns ? {
+          networkSecurityGroup: enableSpokePrivateDns ? {
             id: nsg.outputs.nsgIds[index]
           } : null
-          delegations: (enablePrivateDns && subnet.name == 'FrontEnd') ? [
+          delegations: (enableSpokePrivateDns && subnet.name == 'FrontEnd') ? [
             {
               name: 'MicrosoftWebServerFarms'
               properties: {
@@ -62,14 +66,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
   }
 }
 
-// Create Private DNS Zones if enabled
-resource privateDnsZones 'Microsoft.Network/privateDnsZones@2020-06-01' = [for zoneName in privateDnsZoneNames: if (enablePrivateDns) {
+// Create Private DNS Zones for spoke vnet if enabled
+resource privateDnsZones 'Microsoft.Network/privateDnsZones@2020-06-01' = [for zoneName in privateDnsZoneNames: if (enableSpokePrivateDns) {
   name: zoneName
   location: 'global'
 }]
 
-// Link Private DNS Zones to VNet
-resource privateDnsLinks 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = [for (zoneName, index) in privateDnsZoneNames: if (enablePrivateDns) {
+// Link Private DNS Zones to spoke VNet
+resource privateDnsLinks 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = [for (zoneName, index) in privateDnsZoneNames: if (enableSpokePrivateDns) {
   name: 'dnsl-${vnetName}-${index}'  // Unique name using loop index
   parent: privateDnsZones[index]  // Use the correct array index
   location: 'global'
@@ -81,7 +85,26 @@ resource privateDnsLinks 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@
   }
 }]
 
-module nsg 'nsg.bicep' = if (enablePrivateDns) {
+// Create Private DNS Zone for web app on hub vnet if enabled
+resource privateDnsZoneWebApp 'Microsoft.Network/privateDnsZones@2020-06-01' = if (enableHubPrivateDns) {
+  name: 'privatelink.azurewebsites.net'
+  location: 'global'
+}
+
+// Link Private DNS Zone to hub VNet
+resource privateDnsLinkWebApp 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if (enableHubPrivateDns) {
+  name: 'dnsl-${vnetName}-webapp'
+  parent: privateDnsZoneWebApp
+  location: 'global'
+  properties: {
+    virtualNetwork: {
+      id: vnet.id
+    }
+    registrationEnabled: false
+  }
+}
+
+module nsg 'nsg.bicep' = if (enableSpokePrivateDns) {
   name: 'nsg-${discriminator}-${name}'
   params: {
     location: location

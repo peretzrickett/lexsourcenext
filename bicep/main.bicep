@@ -1,3 +1,4 @@
+// main.bicep
 targetScope = 'subscription'
 
 @description('List of client configurations')
@@ -45,6 +46,7 @@ module centralResources 'modules/centralResources.bicep' = {
   params: {
     location: location
     discriminator: discriminator
+    clientNames: [for client in clients: client.name] // Extract only names
   }
   dependsOn: [
     centralResourceGroup

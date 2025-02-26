@@ -1,3 +1,4 @@
+// modules/sqlServer.bicep
 @description('Name of the SQL Server')
 param clientName string
 

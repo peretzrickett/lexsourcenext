@@ -1,7 +1,14 @@
-
+// modules/nsg.bicep
+@description('Name of the client')
 param clientName string
+
+@description('Distinguished qualifier for resources')
 param discriminator string
+
+@description('Location for resources')
 param location string
+
+@description('Front Door Private IP CIDR')
 param frontDoorPrivateIp string
 
 // Create Backend NSG (Allow only VNet traffic)

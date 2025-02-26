@@ -1,3 +1,4 @@
+// modules/centralResources.bicep
 @description('Location for all resources')
 param location string
 
@@ -16,6 +17,9 @@ param centralVNetCidr string = '10.0.0.0/16'
 @description('Distinguished qualifier for resources')
 param discriminator string
 
+@description('Client Names')
+param clientNames array
+
 @description('Subnets for the central VNet')
 param subnets array = [
   { name: 'AzureFirewallSubnet', addressPrefix: '10.0.1.0/24' }
@@ -32,9 +36,51 @@ module centralVNet 'vnet.bicep' = {
     discriminator: discriminator
     addressPrefixes: [centralVNetCidr]
     subnets: subnets
-    enablePrivateDns: false
+    enableSpokePrivateDns: false
+    enableHubPrivateDns: true
   }
 }
+
+// Retrieve the Private DNS Zone
+resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
+  name: 'privatelink.azurewebsites.net'
+}
+
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' existing = [for (name, index) in clientNames: {
+  name: 'pe-app-${discriminator}-${name}'
+  scope: resourceGroup('rg-${name}')
+}]
+
+// Extract Private IP and FQDN
+module privateIpExtractor 'vnetIpExtractor.bicep' = [ for (name, index) in clientNames: {
+  name: 'extractPrivateIpFromSpoke-${name}'
+  scope: resourceGroup('rg-${name}')
+  params: {
+    name: 'pe-app-${discriminator}-${name}'
+    privateEndpointId: privateEndpoint[index].id
+    timeout: 300
+    serviceType: 'AppService'
+    clientName: name
+    discriminator: discriminator
+    region: location
+  }
+}]
+
+// Deploy the script that creates the DNS records
+module createDnsRecords 'privateDnsRecord.bicep' = [ for (name, index) in clientNames: {
+  name: 'createDnsRecords-${privateEndpoint[index].name}'
+  params: {
+    name: name
+    privateDnsZoneName: privateDnsZone.name
+    privateIps: privateIpExtractor[index].outputs.privateIps
+    privateFqdns: privateIpExtractor[index].outputs.privateFqdns
+  }
+  scope: resourceGroup()
+  dependsOn: [
+    privateDnsZone
+    privateEndpoint[index]
+  ]
+}]
 
 // Deploy Azure Firewall
 module firewall 'firewall.bicep' = {
