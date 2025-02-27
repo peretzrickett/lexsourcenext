@@ -4,3 +4,8 @@ bicep/modules/dooda.bicep
 bicep/.DS_Store
 bicep/lexdemo_202412261902.zip
 bicep/lexdemodb_2024_12_03-04-53.bacpac
+bicep/vm-lexsb-deploy_key.pem
+scratch.json
+bicep/all_bicep.txt
+scratch.json
+bicep/modules/aaaaa.bicep

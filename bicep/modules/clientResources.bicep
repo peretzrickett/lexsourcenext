@@ -1,4 +1,4 @@
-// clientResources.bicep
+// modules/clientResources.bicep
 @description('Client Name')
 param clientName string
 
@@ -23,8 +23,7 @@ module spokeVnet 'vnet.bicep' = {
     location: location
     discriminator: discriminator
     addressPrefixes: [cidr]
-    enableSpokePrivateDns: true
-    enableHubPrivateDns: false
+    topology: 'spoke'
     subnets: [
       { name: 'FrontEnd', addressPrefix: subnets.frontEnd }
       { name: 'BackEnd', addressPrefix: subnets.backEnd }
@@ -47,6 +46,9 @@ module appServicePlan 'appServicePlan.bicep' = {
       capacity: 1
     }
   }
+  dependsOn: [
+    spokeVnet
+  ]
 }
 
 // Deploy App Service
@@ -56,7 +58,6 @@ module appService 'appService.bicep' = {
   params: {
     clientName: clientName
     discriminator: discriminator
-    location: location
     subnetId: spokeVnet.outputs.subnets[0].id
     appServicePlanId: appServicePlan.outputs.id
   }
@@ -69,11 +70,12 @@ module sqlServer 'sqlServer.bicep' = {
   params: {
     clientName: clientName
     discriminator: discriminator
-    location: location
-    subnetId: spokeVnet.outputs.subnets[1].id
     adminLogin: 'adminUser'
     adminPassword: 'Password@123!' // Replace with secure param later
   }
+  dependsOn: [
+    spokeVnet
+  ]
 }
 
 // Deploy Storage Account
@@ -83,9 +85,10 @@ module storageAccount 'storageAccount.bicep' = {
   params: {
     clientName: clientName
     discriminator: discriminator
-    location: location
-    subnetId: spokeVnet.outputs.subnets[1].id
   }
+  dependsOn: [
+    spokeVnet
+  ]
 }
 
 // Deploy Key Vault
@@ -95,9 +98,10 @@ module keyVault 'keyVault.bicep' = {
   params: {
     clientName: clientName
     discriminator: discriminator
-    location: location
-    subnetId: spokeVnet.outputs.subnets[1].id
   }
+  dependsOn: [
+    spokeVnet
+  ]
 }
 
 // Deploy App Insights
@@ -109,8 +113,9 @@ module appInsights 'appInsights.bicep' = {
     enablePrivateLinkScope: true
     enablePrivateLink: true
     clientName: clientName
-    location: location
-    subnetId: spokeVnet.outputs.subnets[1].id
   }
+  dependsOn: [
+    spokeVnet
+  ]
 }
 

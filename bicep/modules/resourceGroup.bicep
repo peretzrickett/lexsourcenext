@@ -1,3 +1,5 @@
+// modules/resourceGroup.bicep
+
 targetScope = 'subscription'
 
 @description('Name of the Resource Group')

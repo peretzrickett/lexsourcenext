@@ -1,14 +1,10 @@
-@description('Location for the resources')
-param location string
+// modules/appInsights.bicep
 
 @description('Name of the client')
 param clientName string
 
 @description('Distinguished qualifier for resources')
 param discriminator string
-
-@description('Subnet ID for Private Link')
-param subnetId string
 
 @description('Application type for Application Insights')
 @allowed([
@@ -33,7 +29,7 @@ param enablePrivateLink bool
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: 'pai-${discriminator}-${clientName}'
-  location: location
+  location: resourceGroup().location
   kind: applicationType
   tags: tags
   properties: {
@@ -48,7 +44,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: 'law-${discriminator}-${clientName}'
-  location: location
+  location: resourceGroup().location
   properties: {
     retentionInDays: 30
     sku: {
@@ -84,11 +80,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     clientName: clientName
     discriminator: discriminator
     name: 'pe-${appInsights.name}'
-    location: location
     privateLinkServiceId: privateLinkScope.id
-    privateDnsZoneName: 'privatelink.insights.azure.com'
     groupId: 'azuremonitor'
-    serviceType: 'AppInsights'
     tags: tags
   }
 }

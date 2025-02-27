@@ -1,3 +1,5 @@
+// modules/vpn.bicep
+
 param discriminator string
 param location string
 param addressPool string

@@ -1,13 +1,41 @@
 // modules/privateDnsRecord.bicep
 
-param name string
+param clientNames array
+param discriminator string
+param endpointType string
 param privateDnsZoneName string
-param privateIps array
-param privateFqdns array  
+param timeout int = 300
+
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' existing = [ for (name, index) in clientNames: {
+  name: 'pe-${endpointType}-${discriminator}-${name}'
+  scope: resourceGroup('rg-${name}')
+}]
+
+resource privateStorageEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' existing = [ for (name, index) in clientNames: {
+  name: 'pe-stg${discriminator}${name}'
+  scope: resourceGroup('rg-${name}')
+}]
+
+// Extract Private IP and FQDN
+module privateIpExtractor 'vnetIpExtractor.bicep' = [ for (name, index) in clientNames: {
+  name: 'extractPrivateIp-${name}-${endpointType}'
+  scope: resourceGroup('rg-central')
+  params: {
+    privateEndpointId: (endpointType == 'stg') ? privateStorageEndpoint[index].id : privateEndpoint[index].id
+    timeout: timeout
+    endpointType: endpointType
+    clientName: name
+    discriminator: discriminator
+  }
+  dependsOn: [
+    privateEndpoint[index]
+    privateStorageEndpoint[index]
+  ]
+}]
 
 // Deploy the script that creates the DNS records
-resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
-  name: 'create-dns-records-${name}'
+resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = [for (name, index) in clientNames: {
+  name: 'create-dns-records-${name}-${endpointType}-${uniqueString(resourceGroup().id, deployment().name, subscription().subscriptionId, name)}'
   location: resourceGroup().location
   kind: 'AzureCLI'
   identity: {
@@ -80,18 +108,19 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       }
       {
         name: 'PRIVATE_IPS'
-        value: join(privateIps, '\n')
+        value: join(privateIpExtractor[index].outputs.privateIps, '\n')
       }
       {
         name: 'PRIVATE_FQDNS'
-        value: join(privateFqdns, '\n')
+        value: join(privateIpExtractor[index].outputs.privateFqdns, '\n')
       }
       {
         name: 'privateDnsZoneName'
         value: privateDnsZoneName
       }
     ]
-    timeout: 'PT300S' // Keeping the timeout
-    retentionInterval: 'P1D'
+    timeout: 'PT${timeout}S' // Keeping the timeout
+    retentionInterval: 'PT1H'
+    cleanupPreference: 'OnSuccess'
   }
-}
+}]

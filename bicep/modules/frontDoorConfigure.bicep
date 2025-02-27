@@ -1,4 +1,5 @@
 // modules/frontDoorConfigure.bicep
+
 @description('Name of the Azure Front Door instance')
 param name string
 
@@ -7,9 +8,6 @@ param clientNames array
 
 @description('Distinguished qualifier for resources')
 param discriminator string
-
-@description('Tags to apply to the Azure Front Door instance')
-param tags object = {}
 
 // Deployment Script to Configure AFD Components (Fixed Environment Variables)
 resource configureAFD 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
@@ -43,13 +41,29 @@ resource configureAFD 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
           ROUTE_NAME="afd-rt-${DISCRIMINATOR}-${CLIENT}"
           ORIGIN_HOST="app-${DISCRIMINATOR}-${CLIENT}.privatelink.azurewebsites.net"
 
-          az afd origin-group create --resource-group "$RESOURCE_GROUP" --profile-name "$FRONTDOOR_NAME" --origin-group-name "$ORIGIN_GROUP" --probe-request-type GET --probe-protocol Https --probe-interval-in-seconds 30 --sample-size 4 --successful-samples-required 3 --probe-path "/" --additional-latency-in-milliseconds 50
+          az afd origin-group create --resource-group "$RESOURCE_GROUP" \
+            --profile-name "$FRONTDOOR_NAME" --origin-group-name "$ORIGIN_GROUP" \
+            --probe-request-type GET --probe-protocol Https \
+            --probe-interval-in-seconds 30 --sample-size 4 \
+            --successful-samples-required 3 --probe-path "/" \
+            --additional-latency-in-milliseconds 50
 
-          az afd origin create --resource-group "$RESOURCE_GROUP" --profile-name "$FRONTDOOR_NAME" --origin-group-name "$ORIGIN_GROUP" --origin-name "$ORIGIN_NAME" --host-name "$ORIGIN_HOST" --origin-host-header "$ORIGIN_HOST" --http-port 80 --https-port 443 --priority 1 --weight 1000 --enabled-state Enabled --enforce-certificate-name-check false
+          az afd origin create --resource-group "$RESOURCE_GROUP" \
+            --profile-name "$FRONTDOOR_NAME" --origin-group-name "$ORIGIN_GROUP" \
+            --origin-name "$ORIGIN_NAME" --host-name "$ORIGIN_HOST" \
+            --origin-host-header "$ORIGIN_HOST" --http-port 80 --https-port 443 \
+            --priority 1 --weight 1000 --enabled-state Enabled \
+            --enforce-certificate-name-check false
 
-          az afd endpoint create --resource-group "$RESOURCE_GROUP" --profile-name "$FRONTDOOR_NAME" --endpoint-name "$ENDPOINT_NAME" --enabled-state Enabled
+          az afd endpoint create --resource-group "$RESOURCE_GROUP" \
+            --profile-name "$FRONTDOOR_NAME" --endpoint-name "$ENDPOINT_NAME" \
+            --enabled-state Enabled
 
-          az afd route create --resource-group "$RESOURCE_GROUP" --profile-name "$FRONTDOOR_NAME" --endpoint-name "$ENDPOINT_NAME" --route-name "$ROUTE_NAME" --origin-group "$ORIGIN_GROUP" --supported-protocols Https --forwarding-protocol HttpsOnly --link-to-default-domain Enabled --https-redirect Disabled
+          az afd route create --resource-group "$RESOURCE_GROUP" \
+            --profile-name "$FRONTDOOR_NAME" --endpoint-name "$ENDPOINT_NAME" \
+            --route-name "$ROUTE_NAME" --origin-group "$ORIGIN_GROUP" \
+            --supported-protocols Https --forwarding-protocol HttpsOnly \
+            --link-to-default-domain Enabled --https-redirect Disabled
       done
     '''
     environmentVariables: [
@@ -58,7 +72,7 @@ resource configureAFD 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       { name: 'DISCRIMINATOR', value: discriminator }
       { name: 'CLIENT_NAMES', value: join(clientNames, ',') }
     ]
-    retentionInterval: 'P1D'
+    retentionInterval: 'PT1H'
     timeout: 'PT20M'
     cleanupPreference: 'OnSuccess'
   }

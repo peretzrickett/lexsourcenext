@@ -1,14 +1,10 @@
+// modules/keyVault.bicep
+
 @description('Name of the client')
 param clientName string
 
 @description('Distinguished qualifier for resources')
 param discriminator string
-
-@description('Location of the Key Vault')
-param location string
-
-@description('Subnet ID for Private Link')
-param subnetId string
 
 @description('SKU of the Key Vault (standard or premium)')
 @allowed([
@@ -32,7 +28,7 @@ param tags object = {}
 // Create the Key Vault resource
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: 'pkv-${discriminator}-${clientName}'
-  location: location
+  location: resourceGroup().location
   properties: {
     sku: {
       family: 'A'
@@ -54,11 +50,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     clientName: clientName
     discriminator: discriminator
     name: 'pe-${keyVault.name}'
-    location: location
     privateLinkServiceId: keyVault.id
-    privateDnsZoneName: 'privatelink.vaultcore.azure.net'
     groupId: 'vault'
-    serviceType: 'KeyVault'
     tags: tags
   }
 }

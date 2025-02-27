@@ -1,3 +1,5 @@
+// modules/sentinel.bicep
+
 param location string
 param name string
 

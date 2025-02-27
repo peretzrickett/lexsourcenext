@@ -15,8 +15,11 @@ param subnetId string
 ])
 param threatIntelMode string = 'Alert'
 
-@description('Firewall policy ID (optional)')
-param firewallPolicyId string = ''
+@description('DNS servers for the Azure Firewall')
+param dnsServers array = ['168.63.129.16']
+
+@description('Enable DNS proxy on the Azure Firewall')
+param enableDnsProxy bool = true
 
 @description('Tags to apply to the Azure Firewall')
 param tags object = {}
@@ -31,6 +34,7 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
     publicIPAllocationMethod: 'Static'
   }
 }
+
 resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
   name: name
   location: location
@@ -49,9 +53,40 @@ resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
       }
     ]
     threatIntelMode: threatIntelMode
-    firewallPolicy: empty(firewallPolicyId) ? null : {
-      id: firewallPolicyId
-    }
+    networkRuleCollections: [
+      {
+        name: 'AllowDNSAndARMAndSSH'
+        properties: {
+          priority: 200
+          action: {
+            type: 'Allow'
+          }
+          rules: [
+            {
+              name: 'AllowDNSResolver'
+              sourceAddresses: ['10.0.2.0/24']  // OtherServices subnet
+              destinationAddresses: ['168.63.129.16']
+              protocols: ['TCP', 'UDP']  // DNS uses both TCP and UDP on port 53
+              destinationPorts: ['53']
+            }
+            {
+              name: 'AllowManagement'
+              sourceAddresses: ['10.0.2.0/24']  // OtherServices subnet
+              destinationAddresses: ['AzureResourceManager']
+              protocols: ['TCP']
+              destinationPorts: ['443']
+            }
+            {
+              name: 'AllowSSHInbound'
+              sourceAddresses: ['*']
+              destinationAddresses: ['172.174.206.65']  // VM public IP (update if changed)
+              protocols: ['TCP']
+              destinationPorts: ['22']
+            }
+          ]
+        }
+      }
+    ]
   }
   tags: tags
 }
@@ -64,3 +99,6 @@ output name string = firewall.name
 
 @description('The public IP configuration of the Azure Firewall')
 output publicIp string = firewall.properties.ipConfigurations[0].properties.publicIPAddress.id
+
+@description('The private IP of the Azure Firewall')
+output privateIp string = firewall.properties.ipConfigurations[0].properties.privateIPAddress

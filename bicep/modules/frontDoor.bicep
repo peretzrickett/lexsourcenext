@@ -1,4 +1,5 @@
 // modules/frontDoor.bicep
+
 @description('Name of the Azure Front Door instance')
 param name string
 

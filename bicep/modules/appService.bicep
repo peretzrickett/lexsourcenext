@@ -1,6 +1,4 @@
 // modules/appService.bicep
-@description('Location where the App Service will be deployed')
-param location string
 
 @description('Name of the client')
 param clientName string
@@ -23,7 +21,7 @@ param appSettings array = []
 // Create the App Service resource with public access disabled
 resource appService 'Microsoft.Web/sites@2022-03-01' = {
   name: 'app-${discriminator}-${clientName}'
-  location: location
+  location: resourceGroup().location  
   properties: {
     serverFarmId: appServicePlanId
     publicNetworkAccess: 'Disabled' // Disable public access
@@ -65,7 +63,6 @@ resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2022-03-01' = {
   properties: {
     subnetResourceId: subnetId  // Integrate App Service with the specified VNet
   }
-  dependsOn: [appService]
 }
 
 resource appServiceRestrictions 'Microsoft.Web/sites/config@2022-03-01' = {
@@ -93,11 +90,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     name: 'pe-${appService.name}'
     clientName: clientName
     discriminator: discriminator
-    location: location
     privateLinkServiceId: appService.id
-    privateDnsZoneName: 'privatelink.azurewebsites.net'
     groupId: 'sites'
-    serviceType: 'AppService'
     tags: tags
   }
 }

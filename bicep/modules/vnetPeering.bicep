@@ -1,4 +1,5 @@
 // modules/vnetPeering.bicep
+
 targetScope = 'subscription'
 
 // param centralVnetId string

@@ -1,23 +1,21 @@
 // modules/vnetIpExtractor.bicep
+
 @description('ID of the Private Endpoint')
 param privateEndpointId string
-
-@description('Name of the Private Endpoint')
-param name string
 
 @description('Timeout for the script execution in seconds')
 param timeout int = 300
 
 @description('Type of service for additional DNS configuration (e.g., "AppService", "AppInsights", "LogAnalytics", "KeyVault", "SqlServer", "Storage")')
 @allowed([
-  'AppService'
-  'AppInsights'
-  'LogAnalytics'
-  'KeyVault'
-  'SqlServer'
-  'Storage'
+  'app'
+  'pai'
+  'law'
+  'pkv'
+  'sql'
+  'stg'
 ])
-param serviceType string = 'AppService'
+param endpointType string = 'app'
 
 @description('Client name for the Private Endpoint')
 param clientName string
@@ -25,18 +23,17 @@ param clientName string
 @description('Discriminator for the Private Endpoint')
 param discriminator string
 
-@description('Region for the service, if applicable (e.g., "eastus")')
-param region string = 'eastus'
-
 // Reference the existing User Assigned Managed Identity
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: 'uami-deployment-scripts'
   scope: resourceGroup('rg-central') // Ensure this matches the UAMI's resource group
 }
 
+var endpointName = (endpointType == 'stg') ? toLower('ep-${endpointType}${discriminator}${clientName}') : 'ep-${endpointType}-${discriminator}-${clientName}'
+
 // Deploy the script that retrieves the Private IPs and generates FQDNs
 resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
-  name: 'extract-private-ip-${name}'
+  name: 'extract-private-ip-${endpointName}-${uniqueString(resourceGroup().id, deployment().name, subscription().subscriptionId, endpointName)}'
   kind: 'AzureCLI'
   location: resourceGroup().location
   identity: {
@@ -51,7 +48,7 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
       # Echo variables for debugging
       echo "Subscription ID: $SUBSCRIPTION_ID"
       echo "Private Endpoint ID: $PRIVATE_ENDPOINT_ID"
-      echo "Service Type: $SERVICE_TYPE"
+      echo "Service Type: $ENDPOINT_TYPE"
       echo "Client Name: $CLIENT_NAME"
       echo "Discriminator: $DISCRIMINATOR"
       echo "Region: $REGION"
@@ -141,43 +138,33 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
 
       # Dynamically generate FQDNs based on service type and region
       PRIVATE_FQDNS=""
-      case "$SERVICE_TYPE" in
-        "AppService")
+      case "$ENDPOINT_TYPE" in
+        "app")
           PRIVATE_FQDNS="app-${DISCRIMINATOR}-${CLIENT_NAME}.azurewebsites.net\napp-${DISCRIMINATOR}-${CLIENT_NAME}.scm.azurewebsites.net\napp-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.azurewebsites.net\napp-${DISCRIMINATOR}-${CLIENT_NAME}.scm.privatelink.azurewebsites.net"
           ;;
-        "AppInsights")
-          if [ "$REGION" = "eastus" ]; then
-              PRIVATE_FQDNS="eastus-8.in.ai.monitor.azure.com\neastus.livediagnostics.monitor.azure.com\napi.monitor.azure.com\nglobal.in.ai.monitor.azure.com\nprofiler.monitor.azure.com\nlive.monitor.azure.com\ndiagservices-query.monitor.azure.com\nsnapshot.monitor.azure.com\nglobal.handler.control.monitor.azure.com\nscadvisorcontentpl.blob.core.windows.net"
-          else
-              echo "Error: Unsupported region for App Insights FQDNs: $REGION"
-              exit 1
-          fi
+        "pai")
+          PRIVATE_FQDNS="pai-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com"
           ;;
-        "LogAnalytics")
-          if [ "$REGION" = "eastus" ]; then
-              PRIVATE_FQDNS="eastus.ods.opinsights.azure.com\neastus.oms.opinsights.azure.com\neastus.agentsvc.azure-automation.net"
-          else
-              echo "Error: Unsupported region for Log Analytics FQDNs: $REGION"
-              exit 1
-          fi
+        "law")
+          PRIVATE_FQDNS="law-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com"
           ;;
-        "KeyVault")
+        "pkv")
           PRIVATE_FQDNS="pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.vaultcore.azure.net"
           ;;
-        "SqlServer")
-          PRIVATE_FQDNS="sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.database.windows.net"
+        "sql")
+          PRIVATE_FQDNS="sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.database.windows.net"  # Simplified to a single valid FQDN
           ;;
-        "Storage")
-          PRIVATE_FQDNS="stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.core.windows.net\n${CLIENT_NAME}.privatelink.queue.core.windows.net\n${CLIENT_NAME}.privatelink.table.core.windows.net\n${CLIENT_NAME}.privatelink.file.core.windows.net"
+        "stg")
+          PRIVATE_FQDNS="stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.${STORAGE_SUFFIX}\n${CLIENT_NAME}.privatelink.queue.${STORAGE_SUFFIX}\n${CLIENT_NAME}.privatelink.table.${STORAGE_SUFFIX}\n${CLIENT_NAME}.privatelink.file.${STORAGE_SUFFIX}"
           ;;
         *)
-          echo "Error: Unsupported service type: $SERVICE_TYPE"
+          echo "Error: Unsupported service type: $ENDPOINT_TYPE"
           exit 1
           ;;
       esac
 
       if [ -z "$PRIVATE_FQDNS" ]; then
-          echo "Error: No FQDNs determined for service type $SERVICE_TYPE"
+          echo "Error: No FQDNs determined for service type $ENDPOINT_TYPE"
           exit 1
       fi
 
@@ -198,8 +185,8 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
         value: privateEndpointId
       }
       {
-        name: 'SERVICE_TYPE'
-        value: serviceType
+        name: 'ENDPOINT_TYPE'
+        value: endpointType
       }
       {
         name: 'CLIENT_NAME'
@@ -211,11 +198,16 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
       }
       {
         name: 'REGION'
-        value: region
+        value: resourceGroup().location
+      }
+      {
+        name: 'STORAGE_SUFFIX'
+        value: environment().suffixes.storage
       }
     ]
     timeout: 'PT${timeout}S' // Use the timeout parameter
-    retentionInterval: 'P1D'
+    retentionInterval: 'PT1H'
+    cleanupPreference: 'OnSuccess'
   }
   dependsOn: [uami] // Ensure UAMI is referenced
 }

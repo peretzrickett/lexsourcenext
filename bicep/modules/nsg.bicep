@@ -1,4 +1,5 @@
 // modules/nsg.bicep
+
 @description('Name of the client')
 param clientName string
 

@@ -1,15 +1,10 @@
 // modules/sqlServer.bicep
+
 @description('Name of the SQL Server')
 param clientName string
 
 @description('Distinguished qualifier for resources')
 param discriminator string
-
-@description('Location of the SQL Server')
-param location string
-
-@description('Subnet ID for Private Link')
-param subnetId string
 
 @description('Tags for the SQL Server')
 param tags object = {}
@@ -23,7 +18,7 @@ param adminPassword string
 
 resource sqlServer 'Microsoft.Sql/servers@2021-05-01-preview' = {
   name: 'sql-${discriminator}-${clientName}'
-  location: location
+  location: resourceGroup().location
   properties: {
     publicNetworkAccess: 'Disabled'
     administratorLogin: adminLogin
@@ -38,11 +33,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     clientName: clientName
     discriminator: discriminator
     name: 'pe-${sqlServer.name}'
-    location: location
     privateLinkServiceId: sqlServer.id
-    privateDnsZoneName: 'privatelink${environment().suffixes.sqlServerHostname}'
     groupId: 'sqlServer'
-    serviceType: 'SqlServer'
     tags: tags
   }
 }

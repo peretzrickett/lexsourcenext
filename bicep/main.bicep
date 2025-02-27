@@ -1,4 +1,5 @@
 // main.bicep
+
 targetScope = 'subscription'
 
 @description('List of client configurations')
@@ -70,6 +71,19 @@ module clientResources 'modules/clientResources.bicep' = [for client in clients:
   ]
 }]
 
+module privateDnsZone 'modules/privateDnsZone.bicep' = {
+  name: 'privateDnsZone'
+  scope: resourceGroup('rg-central')
+  params: {
+    clientNames: [for client in clients: client.name]
+    discriminator: discriminator
+  }
+  dependsOn: [
+    centralResources
+    clientResources
+  ]
+}
+
 // Peer the central VNet with each client VNet
 @batchSize(1)
 module peering 'modules/vnetPeering.bicep' = [for client in clients: {
@@ -82,6 +96,7 @@ module peering 'modules/vnetPeering.bicep' = [for client in clients: {
   dependsOn: [
     centralResources
     clientResources
+    privateDnsZone
   ]
 }] 
 

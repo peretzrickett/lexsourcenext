@@ -1,4 +1,5 @@
 // modules/centralResources.bicep
+
 @description('Location for all resources')
 param location string
 
@@ -24,7 +25,7 @@ param clientNames array
 param subnets array = [
   { name: 'AzureFirewallSubnet', addressPrefix: '10.0.1.0/24' }
   { name: 'OtherServices', addressPrefix: '10.0.2.0/24' }
-  { name: 'GatewaySubnet', addressPrefix: '10.0.3.0/26'}
+  { name: 'GatewaySubnet', addressPrefix: '10.0.3.0/26' }
 ]
 
 // Deploy the central VNet
@@ -36,60 +37,34 @@ module centralVNet 'vnet.bicep' = {
     discriminator: discriminator
     addressPrefixes: [centralVNetCidr]
     subnets: subnets
-    enableSpokePrivateDns: false
-    enableHubPrivateDns: true
+    topology: 'hub'
   }
 }
 
-// Retrieve the Private DNS Zone
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  name: 'privatelink.azurewebsites.net'
-}
-
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' existing = [for (name, index) in clientNames: {
-  name: 'pe-app-${discriminator}-${name}'
-  scope: resourceGroup('rg-${name}')
-}]
-
-// Extract Private IP and FQDN
-module privateIpExtractor 'vnetIpExtractor.bicep' = [ for (name, index) in clientNames: {
-  name: 'extractPrivateIpFromSpoke-${name}'
-  scope: resourceGroup('rg-${name}')
+module privateDnsZone 'privateDnsZone.bicep' = {
+  name: 'privateDnsZone'
   params: {
-    name: 'pe-app-${discriminator}-${name}'
-    privateEndpointId: privateEndpoint[index].id
-    timeout: 300
-    serviceType: 'AppService'
-    clientName: name
+    clientNames: clientNames
     discriminator: discriminator
-    region: location
   }
-}]
-
-// Deploy the script that creates the DNS records
-module createDnsRecords 'privateDnsRecord.bicep' = [ for (name, index) in clientNames: {
-  name: 'createDnsRecords-${privateEndpoint[index].name}'
-  params: {
-    name: name
-    privateDnsZoneName: privateDnsZone.name
-    privateIps: privateIpExtractor[index].outputs.privateIps
-    privateFqdns: privateIpExtractor[index].outputs.privateFqdns
-  }
-  scope: resourceGroup()
   dependsOn: [
-    privateDnsZone
-    privateEndpoint[index]
+    centralVNet
   ]
-}]
+}
 
-// Deploy Azure Firewall
+// Deploy Azure Firewall with DNS and rules
 module firewall 'firewall.bicep' = {
   name: 'firewall'
   params: {
     name: firewallName
     location: location
     subnetId: centralVNet.outputs.subnets[0].id
+    dnsServers: ['168.63.129.16']
+    enableDnsProxy: true
   }
+  dependsOn: [
+    centralVNet
+  ]
 }
 
 // Deploy Sentinel (Log Analytics Workspace)
@@ -114,14 +89,42 @@ module frontdoor 'frontDoor.bicep' = {
   ]
 }
 
-// module vpn 'vpn.bicep' = {
-//   name: 'vpn'
-//   params: {
-//     location: location
-//     discriminator: discriminator
-//     addressPool: '10.0.255.0/24'
-//   }
-//   dependsOn: [
-//     centralVNet
-//   ]
-// }
+// Deploy Route Table for OtherServices
+resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
+  name: 'RouteTable'
+  location: location
+  properties: {
+    routes: [
+      {
+        name: 'RouteToFirewall'
+        properties: {
+          addressPrefix: '0.0.0.0/0'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: firewall.outputs.privateIp
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    centralVNet
+  ]
+}
+
+resource parentVNet 'Microsoft.Network/virtualNetworks@2024-05-01' existing = {
+  name: 'vnet-${discriminator}-Central'
+  dependsOn: [
+    centralVNet
+  ]
+}
+
+// Associate Route Table with OtherServices subnet
+resource otherServicesSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-02-01' = {
+  name: 'OtherServices'
+  parent: parentVNet
+  properties: {
+    addressPrefix: '10.0.2.0/24'
+    routeTable: {
+      id: routeTable.id
+    }
+  }
+}
