@@ -48,7 +48,7 @@ process_resource_group() {
 
             # List and delete only A record sets for the zone
             echo "Listing A record sets for zone $ZONE in $RG..."
-            A_RECORDS=$(az network private-dns record-set a list --resource-group "$RG" --zone-name "$ZONE" --query "[].name" -o tsv --yes 2>/dev/null)
+            A_RECORDS=$(az network private-dns record-set a list --resource-group "$RG" --zone-name "$ZONE" --query "[].name" -o tsv 2>/dev/null)
 
             if [[ -n "$A_RECORDS" ]]; then
                 echo "Deleting A record sets for zone $ZONE in $RG..."

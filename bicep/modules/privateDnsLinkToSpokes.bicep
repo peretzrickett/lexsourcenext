@@ -39,6 +39,6 @@ resource privateDnsLinksToSpoke 'Microsoft.Network/privateDnsZones/virtualNetwor
     virtualNetwork: {
       id: vnet.id
     }
-    registrationEnabled: true
+    registrationEnabled: false
   }
 }]
