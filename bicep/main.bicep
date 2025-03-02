@@ -1,14 +1,12 @@
-// main.bicep
-
 targetScope = 'subscription'
 
-@description('List of client configurations')
+@description('List of client configurations for deployment')
 param clients array
 
-@description('Location for all resources')
+@description('Location for all resources, defaults to East US')
 param location string = 'eastus'
 
-@description('Distinguished qualifier for resources')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string = 'lexsb'
 
 // Create the central resource group at the subscription level
@@ -20,14 +18,6 @@ module centralResourceGroup 'modules/resourceGroup.bicep' = {
   }
 }
 
-// module managedIdentity 'modules/managedIdentity.bicep' = {
-//   name: 'managedIdentity'
-//   scope: resourceGroup('rg-central')
-//   params: {
-//     name: 'uami-deployment-scripts'
-//   }
-// }
-
 // Create resource groups for each client at the subscription level
 module clientResourceGroups 'modules/resourceGroup.bicep' = [for client in clients: {
   name: 'rg-${client.name}'
@@ -35,9 +25,6 @@ module clientResourceGroups 'modules/resourceGroup.bicep' = [for client in clien
     name: 'rg-${client.name}'
     location: location
   }
-  // dependsOn: [
-  //   managedIdentity
-  // ]
 }]
 
 // Deploy central resources
@@ -47,7 +34,7 @@ module centralResources 'modules/centralResources.bicep' = {
   params: {
     location: location
     discriminator: discriminator
-    clientNames: [for client in clients: client.name] // Extract only names
+    clientNames: [for client in clients: client.name] // Extract only client names for central resources
   }
   dependsOn: [
     centralResourceGroup
@@ -105,7 +92,7 @@ module frontDoorConfiguration 'modules/frontDoorConfigure.bicep' = {
   name: 'frontDoorConfiguration'
   scope: resourceGroup('rg-central')
   params: {
-    clientNames: [for client in clients: client.name] // Extract only names
+    clientNames: [for client in clients: client.name] // Extract only client names for Front Door configuration
     name: 'globalFrontDoor'
     discriminator: discriminator
   }

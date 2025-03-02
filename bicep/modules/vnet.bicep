@@ -3,16 +3,16 @@
 @description('Creates a virtual network with the specified naming')
 param name string
 
-@description('Location for all resources')
+@description('Geographic location for all resources')
 param location string
 
-@description('Distinguished qualifier for resources')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string
 
 @description('Address prefixes for the virtual network')
 param addressPrefixes array
 
-@description('Subnets for the virtual network')
+@description('Subnet configuration for the virtual network')
 param subnets array
 
 @description('Spoke or hub designation for VNet creation')
@@ -66,8 +66,7 @@ module nsg 'nsg.bicep' = if (topology == 'spoke') {
   }
 }
 
-
-@description('The subnet IDs of the virtual network')
+@description('The subnet IDs of the virtual network for connectivity and integration')
 output subnets array = [
   for subnet in subnets: {
     name: subnet.name
@@ -75,5 +74,5 @@ output subnets array = [
   }
 ]
 
-@description('The resource ID of the virtual network')
+@description('The resource ID of the virtual network for reference')
 output vnetId string = vnet.id

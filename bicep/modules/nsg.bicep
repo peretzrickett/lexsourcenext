@@ -1,18 +1,18 @@
 // modules/nsg.bicep
 
-@description('Name of the client')
+@description('Name of the client for the network security groups')
 param clientName string
 
-@description('Distinguished qualifier for resources')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string
 
-@description('Location for resources')
+@description('Geographic location for the network security groups')
 param location string
 
-@description('Front Door Private IP CIDR')
+@description('CIDR block for the Azure Front Door private IP range for secure access')
 param frontDoorPrivateIp string
 
-// Create Backend NSG (Allow only VNet traffic)
+// Create Backend NSG to allow only VNet traffic for internal security
 resource backendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
   name: 'nsg-${discriminator}-${clientName}-backend'
   location: location
@@ -29,6 +29,7 @@ resource backendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: 'VirtualNetwork'
           destinationPortRange: '*'
+          description: 'Allow traffic within the virtual network for secure communication'
         }
       }
       {
@@ -42,13 +43,14 @@ resource backendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
+          description: 'Deny all other inbound traffic for security'
         }
       }
     ]
   }
 }
 
-// Create Frontend NSG (Allow only Front Door Private IP)
+// Create Frontend NSG to allow only Front Door private IP for secure inbound access
 resource frontendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
   name: 'nsg-${discriminator}-${clientName}-frontend'
   location: location
@@ -65,6 +67,7 @@ resource frontendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
+          description: 'Allow traffic from Azure Front Door private IP for secure access'
         }
       }
       {
@@ -78,13 +81,14 @@ resource frontendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
+          description: 'Deny all other inbound traffic for security'
         }
       }
     ]
   }
 }
 
-// Create Frontend NSG (Allow only Front Door Private IP)
+// Create PrivateLink NSG to allow only Front Door private IP for secure private link access
 resource privatelinkNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
   name: 'nsg-${discriminator}-${clientName}-privatelink'
   location: location
@@ -101,6 +105,7 @@ resource privatelinkNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
+          description: 'Allow traffic from Azure Front Door private IP for secure private link access'
         }
       }
       {
@@ -114,43 +119,14 @@ resource privatelinkNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
+          description: 'Deny all other inbound traffic for security'
         }
       }
     ]
   }
 }
 
-// resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' existing = {
-//   name: 'vnet-${discriminator}-${clientName}'
-// }
-
-// resource frontEndSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-05-01' = {
-//   name: 'FrontEnd'
-//   parent: vnet
-// }
-
-// resource backEndSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-05-01' = {
-//   name: 'BackEnd'
-//   parent: vnet
-// }
-
-// // Associate NSGs with Subnets
-// resource backendSubnetNsgAssoc 'Microsoft.Network/virtualNetworks/subnets/networkSecurityGroup@2023-02-01' = {
-//   name: 'backend-nsg-association'
-//   parent: backEndSubnet
-//   properties: {
-//     id: backendNsg.id
-//   }
-// }
-
-// resource frontendSubnetNsgAssoc 'Microsoft.Network/virtualNetworks/subnets/networkSecurityGroup@2023-02-01' = {
-//   name: 'frontend-nsg-association'
-//   parent: frontEndSubnet
-//   properties: {
-//     id: frontendNsg.id
-//   }
-// }
-
+@description('Array of resource IDs for the network security groups created')
 output nsgIds array = [
   frontendNsg.id
   backendNsg.id

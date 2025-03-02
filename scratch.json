@@ -27,38 +27,45 @@
                                         "details": [
                                             {
                                                 "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/createDnsRecords-privatelink.file.core.windows.net-5",
+                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/privateDnsLinkToSpokes-lexsb",
                                                 "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
                                                 "details": [
                                                     {
                                                         "code": "DeploymentFailed",
-                                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/createDnsRecords-privatelink.file.core.windows.net-5",
+                                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/privateDnsLinkToSpokes-lexsb",
                                                         "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
                                                         "details": [
                                                             {
-                                                                "code": "ResourceDeploymentFailure",
-                                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/extractPrivateIp-ClientA-stg",
-                                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                                "details": [
-                                                                    {
-                                                                        "code": "DeploymentFailed",
-                                                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/extractPrivateIp-ClientA-stg",
-                                                                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
-                                                                        "details": [
-                                                                            {
-                                                                                "code": "ResourceDeploymentFailure",
-                                                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexsbclienta-kdrmfoqj6eusm",
-                                                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'failed'.",
-                                                                                "details": [
-                                                                                    {
-                                                                                        "code": "DeploymentScriptContainerGroupNotFound",
-                                                                                        "message": "The deployment script was not able to find container group '5oe3zcrynskssazscripts', please make sure that another process or tool did not remove it. Please refer to https://aka.ms/DeploymentScriptsTroubleshoot for more deployment script information."
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                ]
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net' could not be found."
                                                             }
                                                         ]
                                                     }
@@ -66,128 +73,47 @@
                                             },
                                             {
                                                 "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/createDnsRecords-privatelink.blob.core.windows.net-4",
+                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/privateDnsLinkToSpokes-lexsb",
                                                 "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
                                                 "details": [
                                                     {
                                                         "code": "DeploymentFailed",
-                                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/createDnsRecords-privatelink.blob.core.windows.net-4",
+                                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/privateDnsLinkToSpokes-lexsb",
                                                         "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
                                                         "details": [
                                                             {
-                                                                "code": "ResourceDeploymentFailure",
-                                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/extractPrivateIp-ClientA-stg",
-                                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                                "details": [
-                                                                    {
-                                                                        "code": "DeploymentFailed",
-                                                                        "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/extractPrivateIp-ClientA-stg",
-                                                                        "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/arm-deployment-operations for usage details.",
-                                                                        "details": [
-                                                                            {
-                                                                                "code": "ResourceDeploymentFailure",
-                                                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexsbclienta-kdrmfoqj6eusm",
-                                                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'failed'.",
-                                                                                "details": [
-                                                                                    {
-                                                                                        "code": "DeploymentScriptContainerGroupNotFound",
-                                                                                        "message": "The deployment script was not able to find container group '5oe3zcrynskssazscripts', please make sure that another process or tool did not remove it. Please refer to https://aka.ms/DeploymentScriptsTroubleshoot for more deployment script information."
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                ]
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net' could not be found."
+                                                            },
+                                                            {
+                                                                "code": "ParentResourceNotFound",
+                                                                "message": "Failed to perform 'write' on resource(s) of type 'privateDnsZones/virtualNetworkLinks', because the parent resource '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com' could not be found."
                                                             }
                                                         ]
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com/virtualNetworkLinks/dnsl-lexsb-central-privatelink.insights.azure.com",
-                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                "details": [
-                                                    {
-                                                        "code": "Conflict",
-                                                        "message": "Private zone 'privatelink.insights.azure.com' is already linked to the virtual network '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central'."
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.core.windows.net",
-                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                "details": [
-                                                    {
-                                                        "code": "Conflict",
-                                                        "message": "Private zone 'privatelink.core.windows.net' is already linked to the virtual network '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central'."
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.database.windows.net",
-                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                "details": [
-                                                    {
-                                                        "code": "Conflict",
-                                                        "message": "Private zone 'privatelink.database.windows.net' is already linked to the virtual network '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central'."
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.blob.core.windows.net",
-                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                "details": [
-                                                    {
-                                                        "code": "Conflict",
-                                                        "message": "Private zone 'privatelink.blob.core.windows.net' is already linked to the virtual network '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central'."
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.file.core.windows.net",
-                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                "details": [
-                                                    {
-                                                        "code": "Conflict",
-                                                        "message": "Private zone 'privatelink.file.core.windows.net' is already linked to the virtual network '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central'."
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.vaultcore.azure.net",
-                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                "details": [
-                                                    {
-                                                        "code": "Conflict",
-                                                        "message": "Private zone 'privatelink.vaultcore.azure.net' is already linked to the virtual network '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central'."
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.azurewebsites.net",
-                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                "details": [
-                                                    {
-                                                        "code": "Conflict",
-                                                        "message": "Private zone 'privatelink.azurewebsites.net' is already linked to the virtual network '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central'."
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "code": "ResourceDeploymentFailure",
-                                                "target": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com/virtualNetworkLinks/dnsl-lexsb-central-privatelink.monitor.azure.com",
-                                                "message": "The resource write operation failed to complete successfully, because it reached terminal provisioning state 'Failed'.",
-                                                "details": [
-                                                    {
-                                                        "code": "Conflict",
-                                                        "message": "Private zone 'privatelink.monitor.azure.com' is already linked to the virtual network '/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central'."
                                                     }
                                                 ]
                                             }

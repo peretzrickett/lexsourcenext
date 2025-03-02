@@ -1,12 +1,12 @@
 // modules/vnetIpExtractor.bicep
 
-@description('ID of the Private Endpoint')
+@description('Resource ID of the Private Endpoint to extract IP and FQDN information')
 param privateEndpointId string
 
-@description('Timeout for the script execution in seconds')
-param timeout int = 300
+@description('Timeout duration in minutes for the script execution')
+param timeout int = 20
 
-@description('Type of service for additional DNS configuration (e.g., "AppService", "AppInsights", "LogAnalytics", "KeyVault", "SqlServer", "Storage")')
+@description('Type of service for additional DNS configuration, specifying the resource type')
 @allowed([
   'app'
   'pai'
@@ -17,13 +17,13 @@ param timeout int = 300
 ])
 param endpointType string = 'app'
 
-@description('Client name for the Private Endpoint')
+@description('Client name associated with the Private Endpoint or service')
 param clientName string
 
-@description('Discriminator for the Private Endpoint')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string
 
-// Reference the existing User Assigned Managed Identity
+// Reference the existing User Assigned Managed Identity for script execution
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: 'uami-deployment-scripts'
   scope: resourceGroup('rg-central') // Ensure this matches the UAMI's resource group
@@ -31,8 +31,9 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' exis
 
 var endpointName = (endpointType == 'stg') ? toLower('ep-${endpointType}${discriminator}${clientName}') : 'ep-${endpointType}-${discriminator}-${clientName}'
 
-// Deploy the script that retrieves the Private IPs and generates FQDNs
-resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+// Deploy the script to retrieve Private IPs and generate FQDNs for the Private Endpoint
+// Skip for App Service (endpointType 'app') since AFD manages the private endpoint
+resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (endpointType != 'app') {
   name: 'extract-private-ip-${endpointName}-${uniqueString(resourceGroup().id, deployment().name, subscription().subscriptionId, endpointName)}'
   kind: 'AzureCLI'
   location: resourceGroup().location
@@ -45,135 +46,82 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
   properties: {
     azCliVersion: '2.40.0'
     scriptContent: '''
-      # Echo variables for debugging
+      #!/bin/bash
+      set -e
+
       echo "Subscription ID: $SUBSCRIPTION_ID"
       echo "Private Endpoint ID: $PRIVATE_ENDPOINT_ID"
       echo "Service Type: $ENDPOINT_TYPE"
-      echo "Client Name: $CLIENT_NAME"
-      echo "Discriminator: $DISCRIMINATOR"
-      echo "Region: $REGION"
-      echo "Cloud: $(az cloud show --query name -o tsv)"
 
-      # Check if subscription ID is empty
+      # Quick subscription check
       if [ -z "$SUBSCRIPTION_ID" ]; then
-          echo "Error: Subscription ID is empty or not set"
-          exit 1
+        echo "Error: Subscription ID is empty"
+        exit 1
       fi
-
-      # Ensure we're in AzureCloud
-      current_cloud=$(az cloud show --query name -o tsv)
-      if [ "$current_cloud" != "AzureCloud" ]; then
-          echo "Switching to AzureCloud..."
-          az cloud set --name AzureCloud || {
-              echo "Error: Failed to switch to AzureCloud"
-              exit 1
-          }
-      fi
-
-      # Set the Azure CLI context to the specified subscription
       az account set --subscription "$SUBSCRIPTION_ID" || {
-          echo "Error: Failed to set subscription context for $SUBSCRIPTION_ID"
-          exit 1
+        echo "Error: Failed to set subscription"
+        exit 1
       }
 
-      # Verify the subscription is set correctly
-      current_subscription=$(az account show --query id -o tsv)
-      if [ "$current_subscription" != "$SUBSCRIPTION_ID" ]; then
-          echo "Error: Current subscription ($current_subscription) does not match expected ($SUBSCRIPTION_ID)"
-          exit 1
-      fi
-
-      # Retrieve Private Endpoint details for debugging
-      echo "Private Endpoint Details:"
-      az network private-endpoint show --ids "$PRIVATE_ENDPOINT_ID" --query "networkInterfaces" -o json
-
-      # Retrieve all Private IPs from Private Endpoint
-      PRIVATE_IPS=$(az network private-endpoint show --ids "$PRIVATE_ENDPOINT_ID" --query "networkInterfaces[*].ipConfigurations[*].privateIPAddress" -o tsv 2>/dev/null | sort -u)
-
-      # Enhanced error handling
+      # Get Private IPs with timeout
+      PRIVATE_IPS=$(timeout 120s az network private-endpoint show \
+        --ids "$PRIVATE_ENDPOINT_ID" \
+        --query "networkInterfaces[*].ipConfigurations[*].privateIPAddress" \
+        -o tsv 2>/dev/null | sort -u | tr '\n' ',' | sed 's/,$//')
       if [ -z "$PRIVATE_IPS" ]; then
-          echo "Error: No private IPs found for Private Endpoint $PRIVATE_ENDPOINT_ID"
-          echo "Checking NIC and IP configurations..."
-          NIC_IDS=$(az network private-endpoint show --ids "$PRIVATE_ENDPOINT_ID" --query "networkInterfaces[*].id" -o tsv 2>/dev/null)
-          if [ -n "$NIC_IDS" ]; then
-              echo "NIC IDs: $NIC_IDS"
-              PRIVATE_IPS=""
-              for NIC_ID in $NIC_IDS; do
-                  NIC_IP=$(az network nic show --ids "$NIC_ID" --query "ipConfigurations[?contains(name, 'privateEndpointIpConfig')].privateIpAddress" -o tsv 2>/dev/null | head -n 1)
-                  if [ -n "$NIC_IP" ]; then
-                      echo "Found Private IP via NIC: $NIC_IP"
-                      PRIVATE_IPS="$PRIVATE_IPS\n$NIC_IP"
-                  else
-                      echo "No private endpoint IP configuration found in NIC $NIC_ID"
-                      az network nic show --ids "$NIC_ID" --query "ipConfigurations" -o json
-                  fi
-              done
-              PRIVATE_IPS=$(echo -e "$PRIVATE_IPS" | tail -n +2 | sort -u) # Remove first empty line and unique IPs
-              if [ -z "$PRIVATE_IPS" ]; then
-                  echo "No valid private IPs found after NIC check"
-                  exit 1
-              fi
-          else
-              echo "No NICs found for Private Endpoint"
-              exit 1
-          fi
+        echo "No IPs found, checking NICs (limited to first NIC)..."
+        NIC_ID=$(timeout 60s az network private-endpoint show \
+          --ids "$PRIVATE_ENDPOINT_ID" \
+          --query "networkInterfaces[0].id" \
+          -o tsv 2>/dev/null)
+        if [ -n "$NIC_ID" ]; then
+          PRIVATE_IPS=$(timeout 60s az network nic show \
+            --ids "$NIC_ID" \
+            --query "ipConfigurations[?contains(name, 'privateEndpointIpConfig')].privateIpAddress" \
+            -o tsv 2>/dev/null | head -n 1)
+        fi
       fi
 
-      # Validate each private IP format
+      # Validate IPs
+      if [ -z "$PRIVATE_IPS" ]; then
+        echo "Error: No valid private IPs found"
+        exit 1
+      fi
       VALID_IPS=""
-      for IP in $PRIVATE_IPS; do
-          if [[ "$IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Valid Private IP: $IP"
-              VALID_IPS="$VALID_IPS\n$IP"
-          else
-              echo "Error: Invalid private IP format: $IP"
-          fi
+      for IP in $(echo "$PRIVATE_IPS" | tr ',' '\n'); do
+        if [[ "$IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          VALID_IPS="$VALID_IPS,$IP"
+        fi
       done
-      PRIVATE_IPS=$(echo -e "$VALID_IPS" | tail -n +2) # Remove first empty line
-
+      PRIVATE_IPS=$(echo "$VALID_IPS" | sed 's/^,//' | tr '\n' ',' | sed 's/,$//')
       if [ -z "$PRIVATE_IPS" ]; then
-          echo "Error: No valid private IPs after validation"
-          exit 1
+        echo "Error: No valid IPs after validation"
+        exit 1
       fi
 
-      # Dynamically generate FQDNs based on service type and region
-      PRIVATE_FQDNS=""
+      # Generate FQDNs
       case "$ENDPOINT_TYPE" in
-        "app")
-          PRIVATE_FQDNS="app-${DISCRIMINATOR}-${CLIENT_NAME}.azurewebsites.net\napp-${DISCRIMINATOR}-${CLIENT_NAME}.scm.azurewebsites.net\napp-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.azurewebsites.net\napp-${DISCRIMINATOR}-${CLIENT_NAME}.scm.privatelink.azurewebsites.net"
-          ;;
-        "pai")
-          PRIVATE_FQDNS="pai-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com"
-          ;;
-        "law")
-          PRIVATE_FQDNS="law-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com"
-          ;;
-        "pkv")
-          PRIVATE_FQDNS="pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.vaultcore.azure.net"
-          ;;
-        "sql")
-          PRIVATE_FQDNS="sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.database.windows.net"  # Simplified to a single valid FQDN
-          ;;
-        "stg")
-          PRIVATE_FQDNS="stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.${STORAGE_SUFFIX}\n${CLIENT_NAME}.privatelink.queue.${STORAGE_SUFFIX}\n${CLIENT_NAME}.privatelink.table.${STORAGE_SUFFIX}\n${CLIENT_NAME}.privatelink.file.${STORAGE_SUFFIX}"
-          ;;
-        *)
-          echo "Error: Unsupported service type: $ENDPOINT_TYPE"
-          exit 1
-          ;;
+        "pai") PRIVATE_FQDNS="pai-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com" ;;
+        "sql") PRIVATE_FQDNS="sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.database.windows.net" ;;
+        "stg") PRIVATE_FQDNS="stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.core.windows.net" ;;
+        "pkv") PRIVATE_FQDNS="pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.vaultcore.azure.net" ;;
+        "law") PRIVATE_FQDNS="law-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com" ;;
+        "app") echo "Skipping App Service"; \
+              echo "{\"privateIps\": [], \"privateFqdns\": []}" > $AZ_SCRIPTS_OUTPUT_PATH; \
+              exit 0 ;;
+        *) echo "Error: Unsupported type $ENDPOINT_TYPE"; exit 1 ;;
       esac
 
       if [ -z "$PRIVATE_FQDNS" ]; then
-          echo "Error: No FQDNs determined for service type $ENDPOINT_TYPE"
-          exit 1
+        echo "Error: No FQDNs generated"
+        exit 1
       fi
 
-      # Output Private IPs and FQDNs as a JSON object to scriptoutputs.json
-      echo "{\"privateIps\": [\"$PRIVATE_IPS\"], \"privateFqdns\": [\"$PRIVATE_FQDNS\"]}" > $AZ_SCRIPTS_OUTPUT_PATH
-      echo "Private IPs: $PRIVATE_IPS" # Log to console for debugging
-      echo "Private FQDNs: $PRIVATE_FQDNS" # Log to console for debugging
-      echo "::set-output name=privateIps::$PRIVATE_IPS" # GitHub Actions-style output for IPs
-      echo "::set-output name=privateFqdns::$PRIVATE_FQDNS" # GitHub Actions-style output for FQDNs
+      # Output results
+      echo "Private IPs: $PRIVATE_IPS"
+      echo "Private FQDNs: $PRIVATE_FQDNS"
+      echo "{\"privateIps\": [\"${PRIVATE_IPS//,/\",\"}\"], \"privateFqdns\": [\"${PRIVATE_FQDNS//,/\",\"}\"]}" \
+        > $AZ_SCRIPTS_OUTPUT_PATH
     '''
     environmentVariables: [
       {
@@ -202,16 +150,16 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
       }
       {
         name: 'STORAGE_SUFFIX'
-        value: environment().suffixes.storage
+        value: 'core.windows.net' // Updated to match standard storage suffix
       }
     ]
-    timeout: 'PT${timeout}S' // Use the timeout parameter
-    retentionInterval: 'PT1H'
-    cleanupPreference: 'OnSuccess'
+    timeout: 'PT${timeout}M' // Using parameter value for timeout
+    retentionInterval: 'PT24H' // Increased from PT1H to 24 hours
+    cleanupPreference: 'OnSuccess' // Retain container until retention expires
   }
   dependsOn: [uami] // Ensure UAMI is referenced
 }
 
-// Output the retrieved Private IP Addresses and FQDNs
-output privateIps array = privateIpRetrieval.properties.outputs.privateIps
-output privateFqdns array = privateIpRetrieval.properties.outputs.privateFqdns
+// Output the retrieved Private IP Addresses and FQDNs, or empty for App Service
+output privateIps array = endpointType != 'app' ? privateIpRetrieval.properties.outputs.privateIps : []
+output privateFqdns array = endpointType != 'app' ? privateIpRetrieval.properties.outputs.privateFqdns : []

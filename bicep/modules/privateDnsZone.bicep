@@ -44,19 +44,38 @@ resource privateDnsLinksToHub 'Microsoft.Network/privateDnsZones/virtualNetworkL
   }
 }]
 
-module privateDnsLinkToSpokes 'privateDnsLinkToSpokes.bicep' = [for (clientName, index) in clientNames: {
-  name: 'privateDnsLinkToSpokes-${discriminator}'
-  scope: resourceGroup('rg-${clientName}')
-  params: {
-    discriminator: discriminator
-    clientName: clientName
-    privateDnsZonesMetadata: privateDnsZonesMetadata
-  }
-  dependsOn: [
-    centralVnet
-    privateDnsLinksToHub
-  ]
+// Create a single flattened array of all client-zone combinations
+var dnsLinks = [for i in range(0, length(clientNames) * length(privateDnsZoneNames)): {
+  clientName: clientNames[i / length(privateDnsZoneNames)]
+  zoneName: privateDnsZoneNames[i % length(privateDnsZoneNames)]
 }]
+
+// Link Private DNS Zones to spoke VNets (in rg-central, single loop)
+resource privateDnsLinksToSpoke 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = [for link in dnsLinks: {
+  name: 'dnsl-${discriminator}-${link.clientName}-${link.zoneName}'
+  parent: privateDnsZones[indexOf(privateDnsZoneNames, link.zoneName)]
+  location: 'global'
+  properties: {
+    virtualNetwork: {
+      id: resourceId('rg-${link.clientName}', 'Microsoft.Network/virtualNetworks', 'vnet-${discriminator}-${link.clientName}')
+    }
+    registrationEnabled: false
+  }
+}]
+
+// module privateDnsLinkToSpokes 'privateDnsLinkToSpokes.bicep' = [for (clientName, index) in clientNames: {
+//   name: 'privateDnsLinkToSpokes-${discriminator}'
+//   scope: resourceGroup('rg-${clientName}')
+//   params: {
+//     discriminator: discriminator
+//     clientName: clientName
+//     privateDnsZonesMetadata: privateDnsZonesMetadata
+//   }
+//   dependsOn: [
+//     centralVnet
+//     privateDnsLinksToHub
+//   ]
+// }]
 
 // Deploy the script that creates the DNS records
 @batchSize(3)

@@ -1,34 +1,34 @@
 // modules/appService.bicep
 
-@description('Name of the client')
+@description('Name of the client for the App Service')
 param clientName string
 
-@description('Distinguished qualifier for resources')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string
 
-@description('Subnet ID for Private Link')
+@description('Subnet ID for VNet integration to enable private network access (FrontEnd subnet)')
 param subnetId string
 
-@description('ID of the App Service Plan')
+@description('ID of the App Service Plan to associate with this App Service')
 param appServicePlanId string
 
-@description('Tags to apply to the App Service')
+@description('Tags to apply to the App Service for organization and billing')
 param tags object = {}
 
-@description('Environment variables (App Settings) for the App Service')
+@description('Environment variables (App Settings) for configuring the App Service')
 param appSettings array = []
 
-// Create the App Service resource with public access disabled
+// Create the App Service resource
 resource appService 'Microsoft.Web/sites@2022-03-01' = {
   name: 'app-${discriminator}-${clientName}'
   location: resourceGroup().location  
   properties: {
     serverFarmId: appServicePlanId
-    publicNetworkAccess: 'Disabled' // Disable public access
+    publicNetworkAccess: 'Enabled'
 
     siteConfig: {
-      vnetRouteAllEnabled: true // Ensure all outbound traffic follows VNet routes
-      scmIpSecurityRestrictionsUseMain: true // Apply restrictions to the SCM (Kudu) site
+      vnetRouteAllEnabled: true // Ensure all outbound traffic follows VNet routes for security
+      scmIpSecurityRestrictionsUseMain: true // Apply IP restrictions to the SCM (Kudu) site, matching main site
       appSettings: [
         for setting in appSettings: {
           name: setting.name
@@ -40,28 +40,31 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
           name: 'AllowPrivateSubnet'
           priority: 100
           action: 'Allow'
-          vnetSubnetResourceId: subnetId // Ensure Private Link subnet is allowed
+          vnetSubnetResourceId: subnetId // Allow traffic only from the FrontEnd subnet
+          description: 'Allow traffic from the FrontEnd subnet for secure access'
         }
         {
           name: 'DenyPublic'
           priority: 200
           action: 'Deny'
-          ipAddress: '0.0.0.0/0' // Block all public traffic
+          ipAddress: '0.0.0.0/0' // Block all public traffic for enhanced security
+          description: 'Deny all public internet access'
         }
       ]
     }
 
-    httpsOnly: true  // Enforce HTTPS
+    httpsOnly: true  // Enforce HTTPS for secure communication
   }
   tags: tags
 }
 
-// Enforce VNet integration with Private Endpoint
+// Enforce VNet integration with FrontEnd subnet (where Microsoft.Web/serverFarms delegation exists)
+// This ensures the App Service can access resources in the VNet securely via the delegated subnet
 resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2022-03-01' = {
   name: 'virtualNetwork'
   parent: appService
   properties: {
-    subnetResourceId: subnetId  // Integrate App Service with the specified VNet
+    subnetResourceId: subnetId  // Integrate App Service with the FrontEnd subnet in the spoke VNet
   }
 }
 
@@ -74,36 +77,19 @@ resource appServiceRestrictions 'Microsoft.Web/sites/config@2022-03-01' = {
         name: 'AllowVNetOnly'
         action: 'Allow'
         priority: 100
-        vnetSubnetResourceId: subnetId  // Only allow VNet traffic
-        description: 'Allow only VNet traffic'
+        vnetSubnetResourceId: subnetId  // Restrict access to only FrontEnd VNet traffic for security
+        description: 'Allow traffic only from the FrontEnd VNet for enhanced isolation'
       }
     ]
   }
   dependsOn: [vnetIntegration]
 }
 
-
-// Private Endpoint for App Service
-module privateEndpoint 'privateEndpoint.bicep' = {
-  name: 'pe-${appService.name}'
-  params: {
-    name: 'pe-${appService.name}'
-    clientName: clientName
-    discriminator: discriminator
-    privateLinkServiceId: appService.id
-    groupId: 'sites'
-    tags: tags
-  }
-}
-
-// Output the resource ID of the App Service
-@description('The resource ID of the App Service')
+@description('The resource ID of the deployed App Service')
 output id string = appService.id
 
-// Output the default URL of the App Service
 @description('The default URL of the App Service')
 output defaultHostName string = appService.properties.defaultHostName
 
-// Output the name of the App Service
-@description('The name of the App Service')
+@description('The name of the App Service for reference')
 output name string = appService.name

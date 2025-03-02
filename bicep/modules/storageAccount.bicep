@@ -1,12 +1,12 @@
 // modules/storageAccount.bicep
 
-@description('Name of the Storage Account')
+@description('Name of the client for the Storage Account')
 param clientName string
 
-@description('Distinguished qualifier for resources')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string
 
-@description('Replication type for the Storage Account')
+@description('Replication type for the Storage Account, defaults to Standard_LRS')
 @allowed([
   'Standard_LRS'
   'Standard_GRS'
@@ -16,22 +16,22 @@ param discriminator string
 ])
 param skuName string = 'Standard_LRS'
 
-@description('Indicates whether the Storage Account is general-purpose V2')
+@description('Type of Storage Account, defaults to general-purpose V2')
 param kind string = 'StorageV2'
 
-@description('Enable blob soft delete retention policy')
+@description('Flag to enable blob soft delete retention policy for data recovery')
 param enableBlobSoftDelete bool = false
 
-@description('Retention period in days for blob soft delete (set 0 to disable)')
+@description('Retention period in days for blob soft delete, defaults to disabled')
 param blobSoftDeleteRetentionDays int = 0
 
-@description('Enable container soft delete retention policy')
+@description('Flag to enable container soft delete retention policy for data recovery')
 param enableContainerSoftDelete bool = false
 
-@description('Retention period in days for container soft delete (set 0 to disable)')
+@description('Retention period in days for container soft delete, defaults to disabled')
 param containerSoftDeleteRetentionDays int = 0
 
-@description('Tags to apply to the Storage Account')
+@description('Tags for organizing and billing the Storage Account')
 param tags object = {}
 
 var storageAccountName = toLower('stg${discriminator}${clientName}')
@@ -45,7 +45,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   }
   kind: kind
   properties: {
-    supportsHttpsTrafficOnly: true
+    supportsHttpsTrafficOnly: true // Enforce HTTPS for security
   }
   tags: tags
 }
@@ -69,7 +69,7 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2021-09-01'
   }
 }
 
-// Private Endpoint for Storage Account (blob access)
+// Private Endpoint for Storage Account (blob access, manual, not managed by AFD)
 module privateEndpoint 'privateEndpoint.bicep' = {
   name: privateEndpointName
   params: {
@@ -85,8 +85,8 @@ module privateEndpoint 'privateEndpoint.bicep' = {
 @description('The resource ID of the Storage Account')
 output id string = storageAccount.id
 
-@description('The name of the Storage Account')
+@description('The name of the Storage Account for reference')
 output name string = storageAccount.name
 
-@description('The primary endpoints of the Storage Account')
+@description('The primary endpoints of the Storage Account for connectivity')
 output primaryEndpoints object = storageAccount.properties.primaryEndpoints

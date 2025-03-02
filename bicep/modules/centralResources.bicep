@@ -1,27 +1,27 @@
 // modules/centralResources.bicep
 
-@description('Location for all resources')
+@description('Geographic location for all central resources')
 param location string
 
-@description('Global Firewall Name')
+@description('Name of the global Azure Firewall resource')
 param firewallName string = 'globalFirewall'
 
-@description('Global Front Door Name')
+@description('Name of the global Azure Front Door resource')
 param frontDoorName string = 'globalFrontDoor'
 
-@description('Global Sentinel Workspace Name')
+@description('Name of the global Sentinel (Log Analytics) workspace')
 param sentinelWorkspaceName string = 'globalSentinelWorkspace'
 
 @description('CIDR block for the central VNet')
 param centralVNetCidr string = '10.0.0.0/16'
 
-@description('Distinguished qualifier for resources')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string
 
-@description('Client Names')
+@description('List of client names for linking to central resources')
 param clientNames array
 
-@description('Subnets for the central VNet')
+@description('Subnet configuration for the central VNet')
 param subnets array = [
   { name: 'AzureFirewallSubnet', addressPrefix: '10.0.1.0/24' }
   { name: 'OtherServices', addressPrefix: '10.0.2.0/24' }
@@ -29,7 +29,7 @@ param subnets array = [
 ]
 
 // Deploy the central VNet
-module centralVNet 'vnet.bicep' = {
+module centralVnet 'vnet.bicep' = {
   name: 'centralVNet'
   params: {
     name: 'Central'
@@ -41,6 +41,21 @@ module centralVNet 'vnet.bicep' = {
   }
 }
 
+// Deploy VPN Gateway for secure remote access
+module vpnGateway 'vpn.bicep' = {
+  name: 'vpnGateway'
+  params: {
+    discriminator: discriminator
+    location: location
+    addressPool: '172.16.0.0/24' // VPN client address pool
+    authType: 'Certificate'
+    rootCertData: ''  // This will be provided at deployment time
+  }
+  dependsOn: [
+    centralVnet
+  ]
+}
+
 module privateDnsZone 'privateDnsZone.bicep' = {
   name: 'privateDnsZone'
   params: {
@@ -48,26 +63,27 @@ module privateDnsZone 'privateDnsZone.bicep' = {
     discriminator: discriminator
   }
   dependsOn: [
-    centralVNet
+    centralVnet
   ]
 }
 
-// Deploy Azure Firewall with DNS and rules
+// Extract client private endpoint subnets for firewall rules
+var clientPrivateLinkSubnets = [for client in clientNames: '10.${indexOf(clientNames, client) + 1}.3.0/24']
+
+// Deploy Azure Firewall with DNS proxy for central network security
 module firewall 'firewall.bicep' = {
   name: 'firewall'
   params: {
     name: firewallName
     location: location
-    subnetId: centralVNet.outputs.subnets[0].id
+    subnetId: centralVnet.outputs.subnets[0].id
     dnsServers: ['168.63.129.16']
     enableDnsProxy: true
+    clientSubnets: clientPrivateLinkSubnets // Pass client private endpoint subnets
   }
-  dependsOn: [
-    centralVNet
-  ]
 }
 
-// Deploy Sentinel (Log Analytics Workspace)
+// Deploy Sentinel (Log Analytics Workspace) for monitoring
 module sentinel 'sentinel.bicep' = {
   name: 'sentinel'
   params: {
@@ -75,7 +91,7 @@ module sentinel 'sentinel.bicep' = {
     location: location
   }
   dependsOn: [
-    centralVNet
+    centralVnet
   ]
 }
 
@@ -85,11 +101,11 @@ module frontdoor 'frontDoor.bicep' = {
     name: frontDoorName
   }
   dependsOn: [
-    centralVNet
+    centralVnet
   ]
 }
 
-// Deploy Route Table for OtherServices
+// Deploy Route Table for routing traffic through the firewall
 resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
   name: 'RouteTable'
   location: location
@@ -105,22 +121,19 @@ resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
       }
     ]
   }
-  dependsOn: [
-    centralVNet
-  ]
 }
 
-resource parentVNet 'Microsoft.Network/virtualNetworks@2024-05-01' existing = {
+resource parentVnet 'Microsoft.Network/virtualNetworks@2024-05-01' existing = {
   name: 'vnet-${discriminator}-Central'
   dependsOn: [
-    centralVNet
+    centralVnet
   ]
 }
 
-// Associate Route Table with OtherServices subnet
+// Associate Route Table with OtherServices subnet for central traffic routing
 resource otherServicesSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-02-01' = {
   name: 'OtherServices'
-  parent: parentVNet
+  parent: parentVnet
   properties: {
     addressPrefix: '10.0.2.0/24'
     routeTable: {

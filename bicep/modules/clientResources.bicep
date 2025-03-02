@@ -1,20 +1,21 @@
 // modules/clientResources.bicep
-@description('Client Name')
+
+@description('Name of the client for resource deployment')
 param clientName string
 
-@description('Location for client resources')
+@description('Location for client-specific resources')
 param location string
 
-@description('VNet CIDR block')
+@description('CIDR block for the client VNet')
 param cidr string
 
-@description('Subnets configuration')
+@description('Subnet configuration for the client VNet')
 param subnets object
 
-@description('Distinguished qualifier for resources')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string
 
-// Deploy VNet
+// Deploy VNet for the spoke network
 module spokeVnet 'vnet.bicep' = {
   name: 'vnet-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
@@ -32,7 +33,7 @@ module spokeVnet 'vnet.bicep' = {
   }
 }
 
-// Deploy App Service Plan
+// Deploy App Service Plan for the client
 module appServicePlan 'appServicePlan.bicep' = {
   name: 'asp-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
@@ -51,19 +52,19 @@ module appServicePlan 'appServicePlan.bicep' = {
   ]
 }
 
-// Deploy App Service
+// Deploy App Service (use FrontEnd subnet for vnetIntegration, remove private endpoint)
 module appService 'appService.bicep' = {
   name: 'app-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
   params: {
     clientName: clientName
     discriminator: discriminator
-    subnetId: spokeVnet.outputs.subnets[0].id
+    subnetId: spokeVnet.outputs.subnets[0].id // Use FrontEnd subnet (index 0) for vnetIntegration
     appServicePlanId: appServicePlan.outputs.id
   }
 }
 
-// Deploy SQL Server
+// Deploy SQL Server (keep private endpoint, uses PrivateLink subnet)
 module sqlServer 'sqlServer.bicep' = {
   scope: resourceGroup('rg-${clientName}')
   name: 'sql-${discriminator}-${clientName}'
@@ -71,14 +72,14 @@ module sqlServer 'sqlServer.bicep' = {
     clientName: clientName
     discriminator: discriminator
     adminLogin: 'adminUser'
-    adminPassword: 'Password@123!' // Replace with secure param later
+    adminPassword: 'Password@123!' // Replace with secure parameter in production
   }
   dependsOn: [
     spokeVnet
   ]
 }
 
-// Deploy Storage Account
+// Deploy Storage Account (keep private endpoint, uses PrivateLink subnet)
 module storageAccount 'storageAccount.bicep' = {
   name: 'stg${discriminator}${clientName}'
   scope: resourceGroup('rg-${clientName}')
@@ -91,7 +92,7 @@ module storageAccount 'storageAccount.bicep' = {
   ]
 }
 
-// Deploy Key Vault
+// Deploy Key Vault (keep private endpoint, uses PrivateLink subnet)
 module keyVault 'keyVault.bicep' = {
   name: 'pkv-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
@@ -104,7 +105,7 @@ module keyVault 'keyVault.bicep' = {
   ]
 }
 
-// Deploy App Insights
+// Deploy App Insights (keep private endpoint, uses PrivateLink subnet)
 module appInsights 'appInsights.bicep' = {
   name: 'pai-${discriminator}-${clientName}'
   scope: resourceGroup('rg-${clientName}')
@@ -118,4 +119,3 @@ module appInsights 'appInsights.bicep' = {
     spokeVnet
   ]
 }
-

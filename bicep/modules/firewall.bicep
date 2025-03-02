@@ -16,10 +16,16 @@ param subnetId string
 param threatIntelMode string = 'Alert'
 
 @description('DNS servers for the Azure Firewall')
-param dnsServers array = ['168.63.129.16']
+param dnsServers array
 
 @description('Enable DNS proxy on the Azure Firewall')
-param enableDnsProxy bool = true
+param enableDnsProxy bool
+
+@description('Private IP address of the VM for SSH access')
+param vmPrivateIp string = '10.0.2.4'
+
+@description('Array of client subnet configurations for firewall rules')
+param clientSubnets array = []
 
 @description('Tags to apply to the Azure Firewall')
 param tags object = {}
@@ -33,6 +39,125 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
   properties: {
     publicIPAllocationMethod: 'Static'
   }
+}
+
+// First create a firewall policy that includes the DNS settings
+resource firewallPolicy 'Microsoft.Network/firewallPolicies@2022-05-01' = {
+  name: '${name}-policy'
+  location: location
+  properties: {
+    dnsSettings: {
+      servers: dnsServers
+      enableProxy: enableDnsProxy
+    }
+    threatIntelMode: threatIntelMode
+  }
+}
+
+// Create NAT Rule Collection Group for SSH access
+resource natRuleCollectionGroup 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2022-05-01' = {
+  parent: firewallPolicy
+  name: 'DefaultNatRuleCollectionGroup'
+  properties: {
+    priority: 100
+    ruleCollections: [
+      {
+        ruleCollectionType: 'FirewallPolicyNatRuleCollection'
+        name: 'SSHAccess'
+        priority: 100
+        action: {
+          type: 'DNAT'
+        }
+        rules: [
+          {
+            ruleType: 'NatRule'
+            name: 'SSHToVM'
+            sourceAddresses: ['*']
+            destinationAddresses: [publicIp.properties.ipAddress]
+            destinationPorts: ['22']
+            ipProtocols: ['TCP']
+            translatedAddress: vmPrivateIp
+            translatedPort: '22'
+          }
+        ]
+      }
+    ]
+  }
+}
+
+// Create client subnets network rules array
+var clientSubnetRules = [for (subnet, i) in clientSubnets: {
+  ruleType: 'NetworkRule'
+  name: 'AllowToClient${i}'
+  sourceAddresses: ['10.0.2.0/24'] // OtherServices subnet containing VM
+  destinationAddresses: [subnet]
+  ipProtocols: ['Any']
+  destinationPorts: ['*']
+}]
+
+// Create a policy rule collection group to hold network rules
+resource networkRuleCollectionGroup 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2022-05-01' = {
+  parent: firewallPolicy
+  name: 'DefaultNetworkRuleCollectionGroup'
+  properties: {
+    priority: 200
+    ruleCollections: [
+      {
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        name: 'AllowDNSAndARMAndSSH'
+        priority: 200
+        action: {
+          type: 'Allow'
+        }
+        rules: [
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowDNSResolver'
+            sourceAddresses: ['10.0.2.0/24']  // OtherServices subnet
+            destinationAddresses: ['168.63.129.16']
+            ipProtocols: ['TCP', 'UDP']  // DNS uses both TCP and UDP on port 53
+            destinationPorts: ['53']
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowManagement'
+            sourceAddresses: ['10.0.2.0/24']  // OtherServices subnet
+            destinationAddresses: ['AzureResourceManager']
+            ipProtocols: ['TCP']
+            destinationPorts: ['443']
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowVMOutbound'
+            sourceAddresses: ['10.0.2.0/24'] // OtherServices subnet containing VM
+            destinationAddresses: ['*']      // Any destination
+            ipProtocols: ['TCP']
+            destinationPorts: ['*']          // Any port
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowAllProtocolsToClients'
+            sourceAddresses: ['10.0.2.0/24'] // OtherServices subnet containing VM
+            destinationAddresses: ['10.0.0.0/8'] // All clients in 10.x.x.x range
+            ipProtocols: ['Any']  // Allow all protocols including TCP, UDP, ICMP
+            destinationPorts: ['*']          // Any port
+          }
+        ]
+      }
+      {
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        name: 'ClientSpecificRules'
+        priority: 210
+        action: {
+          type: 'Allow'
+        }
+        rules: clientSubnetRules
+      }
+    ]
+  }
+  dependsOn: [
+    natRuleCollectionGroup // Ensure NAT rules are created first
+  ]
 }
 
 resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
@@ -52,43 +177,15 @@ resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
         }
       }
     ]
-    threatIntelMode: threatIntelMode
-    networkRuleCollections: [
-      {
-        name: 'AllowDNSAndARMAndSSH'
-        properties: {
-          priority: 200
-          action: {
-            type: 'Allow'
-          }
-          rules: [
-            {
-              name: 'AllowDNSResolver'
-              sourceAddresses: ['10.0.2.0/24']  // OtherServices subnet
-              destinationAddresses: ['168.63.129.16']
-              protocols: ['TCP', 'UDP']  // DNS uses both TCP and UDP on port 53
-              destinationPorts: ['53']
-            }
-            {
-              name: 'AllowManagement'
-              sourceAddresses: ['10.0.2.0/24']  // OtherServices subnet
-              destinationAddresses: ['AzureResourceManager']
-              protocols: ['TCP']
-              destinationPorts: ['443']
-            }
-            {
-              name: 'AllowSSHInbound'
-              sourceAddresses: ['*']
-              destinationAddresses: ['172.174.206.65']  // VM public IP (update if changed)
-              protocols: ['TCP']
-              destinationPorts: ['22']
-            }
-          ]
-        }
-      }
-    ]
+    firewallPolicy: {
+      id: firewallPolicy.id
+    }
   }
   tags: tags
+  dependsOn: [
+    natRuleCollectionGroup
+    networkRuleCollectionGroup
+  ]
 }
 
 @description('The resource ID of the Azure Firewall')

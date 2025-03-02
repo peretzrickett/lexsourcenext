@@ -1,12 +1,12 @@
 // modules/appInsights.bicep
 
-@description('Name of the client')
+@description('Name of the client for the Application Insights instance')
 param clientName string
 
-@description('Distinguished qualifier for resources')
+@description('Unique qualifier for resource naming to avoid conflicts')
 param discriminator string
 
-@description('Application type for Application Insights')
+@description('Type of application for Application Insights monitoring')
 @allowed([
   'web'
   'other'
@@ -15,16 +15,16 @@ param discriminator string
 ])
 param applicationType string = 'web'
 
-@description('Tags for the Application Insights instance')
+@description('Tags for organizing and billing the Application Insights instance')
 param tags object = {}
 
-@description('Enable Private Link Scope integration')
+@description('Flag to enable Private Link Scope integration for enhanced security')
 param enablePrivateLinkScope bool = true
 
-@description('Restrict public access to Application Insights')
+@description('Flag to restrict public access to Application Insights for security')
 param restrictPublicAccess bool = true
 
-@description('Enable Private Link Scope for the Application Insights instance')
+@description('Flag to enable Private Link for the Application Insights instance')
 param enablePrivateLink bool
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
@@ -41,7 +41,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-// Log Analytics Workspace
+// Log Analytics Workspace for Application Insights data
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: 'law-${discriminator}-${clientName}'
   location: resourceGroup().location
@@ -64,7 +64,7 @@ resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-previ
   }
 }
 
-// Scoped Resource for Application Insights
+// Scoped Resource linking Application Insights to Private Link Scope
 resource scopedResource 'microsoft.insights/privateLinkScopes/scopedResources@2021-07-01-preview' = if (enablePrivateLink) {
   name: privateLinkScope.name
   parent: privateLinkScope
@@ -73,8 +73,8 @@ resource scopedResource 'microsoft.insights/privateLinkScopes/scopedResources@20
   }
 }
 
-// Private Endpoint for App Insights
-module privateEndpoint 'privateEndpoint.bicep' = {
+// Private Endpoint for App Insights (manual, linked to privatelink.monitor.azure.com)
+module privateEndpoint 'privateEndpoint.bicep' = if (enablePrivateLink) {
   name: 'pe-${appInsights.name}'
   params: {
     clientName: clientName
@@ -85,20 +85,24 @@ module privateEndpoint 'privateEndpoint.bicep' = {
     tags: tags
   }
 }
-@description('The resource ID of the App Insights')
+
+@description('The resource ID of the Application Insights instance')
 output id string = appInsights.id
 
-@description('The instrumentation key of the App Insights')
+@description('The instrumentation key for Application Insights monitoring')
 output instrumentationKey string = appInsights.properties.InstrumentationKey
 
-@description('The connection string of the App Insights')
+@description('The connection string for Application Insights connectivity')
 output connectionString string = appInsights.properties.ConnectionString
 
-@description('The App Insights resource Id')
+@description('The resource ID of the Application Insights instance for reference')
 output appInsightsId string = appInsights.id
 
-@description('The Private Link Scope resource Id')
+@description('The resource ID of the Private Link Scope, if enabled')
 output privateLinkScopeId string = enablePrivateLinkScope ? privateLinkScope.id : ''
 
-@description('The Private Link Scope Association resource Id')
+@description('The resource ID of the associated Log Analytics Workspace')
 output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.id
+
+@description('The resource ID of the Private Endpoint for App Insights, if enabled')
+output privateEndpointId string = enablePrivateLink ? privateEndpoint.outputs.id : ''
