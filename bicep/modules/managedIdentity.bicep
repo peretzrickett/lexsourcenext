@@ -1,26 +1,25 @@
-// @description('Name of the User Assigned Managed Identity')
-// param name string
+@description('Name of the User Assigned Managed Identity')
+param name string
 
-// // Define the User Assigned Managed Identity
-// resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-//   name: name
-// }
+@description('Azure region where the identity will be deployed')
+param location string
 
-// // Generate a deterministic GUID for the role assignment name
-// var roleAssignmentName = guid(subscription().id, uami.id, 'Contributor')
+// Define the User Assigned Managed Identity
+// Note: We always try to create it, Azure will handle idempotency
+resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: name
+  location: location
+}
 
-// // Define the Contributor role definition ID as a variable for clarity
-// var contributorRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+// Define the Contributor role ID
+@description('ID of the Contributor role') 
+var roleId = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
 
-// // Conditionally define the role assignment (Bicep doesn’t natively check existence, but Azure handles idempotency)
-// resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-//   name: roleAssignmentName
-//   scope: subscription()
-//   properties: {
-//     roleDefinitionId: contributorRoleDefinitionId
-//     principalId: uami.properties.principalId
-//   }
-// }
+// Output role information separately to avoid scope confusion
+output roleDefinitionId string = roleId
 
-// @description('The resource ID of the UAMI')
-// output uamiId string = uami.id
+@description('The resource ID of the UAMI')
+output uamiId string = uami.id
+
+@description('The principal ID of the UAMI')
+output principalId string = uami.properties.principalId

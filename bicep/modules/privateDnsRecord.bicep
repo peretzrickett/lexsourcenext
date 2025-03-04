@@ -27,8 +27,9 @@ resource privateStorageEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' 
 }]
 
 // Extract Private IPs and FQDNs for non-App Service resources in each spoke
+// Note: Adding a unique suffix to avoid conflicts with previous deployments
 module privateIpExtractor 'vnetIpExtractor.bicep' = [for (name, index) in clientNames: if (endpointType != 'app') {
-  name: 'extractPrivateIp-${name}-${endpointType}'
+  name: 'extractIp-${name}-${endpointType}-${uniqueString(resourceGroup().id, deployment().name)}'
   scope: resourceGroup('rg-${name}')
   params: {
     privateEndpointId: (endpointType == 'stg') ? privateStorageEndpoint[index].id : privateEndpoint[index].id
@@ -94,14 +95,26 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       ALL_FQDNS=""
       for SPOKE in ${clientNames//,/ }; do
         echo "Checking rg-$SPOKE for $ENDPOINT_TYPE..."
+        # Search for any deployment that starts with extractIp and contains the endpoint type
+        EXTRACT_IP_DEPLOYMENT=$(az deployment group list \
+          -g "rg-$SPOKE" \
+          --query "[?starts_with(name, 'extractIp-${SPOKE}-${ENDPOINT_TYPE}')].name" \
+          -o tsv 2>/dev/null | head -1)
+        
+        if [ -z "$EXTRACT_IP_DEPLOYMENT" ]; then
+          echo "No extractor deployment found for $SPOKE-$ENDPOINT_TYPE"
+          continue
+        fi
+          
+        echo "Found deployment: $EXTRACT_IP_DEPLOYMENT"
         IPS=$(az deployment group show \
           -g "rg-$SPOKE" \
-          -n "extractPrivateIp-$SPOKE-$ENDPOINT_TYPE" \
+          -n "$EXTRACT_IP_DEPLOYMENT" \
           --query "properties.outputs.privateIps.value" \
           -o tsv 2>/dev/null || echo "")
         FQDNS=$(az deployment group show \
           -g "rg-$SPOKE" \
-          -n "extractPrivateIp-$SPOKE-$ENDPOINT_TYPE" \
+          -n "$EXTRACT_IP_DEPLOYMENT" \
           --query "properties.outputs.privateFqdns.value" \
           -o tsv 2>/dev/null || echo "")
         ALL_IPS="$ALL_IPS,$IPS"
@@ -123,6 +136,8 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
 
       # Create DNS A records
       for fqdn in $FQDNS; do
+        # Remove trailing dots from FQDN if present
+        fqdn=${fqdn%.}
         for ip in $IPS; do
           echo "Checking A record for $fqdn -> $ip..."
           if ! az network private-dns record-set a show \
@@ -173,8 +188,8 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       }
     ]
     timeout: 'PT${timeout}S'
-    retentionInterval: 'PT1H'
-    cleanupPreference: 'OnSuccess'
+    retentionInterval: 'PT6H'
+    cleanupPreference: 'Always' // Always clean up, regardless of success or failure
   }
   dependsOn: [privateIpExtractor]
 }

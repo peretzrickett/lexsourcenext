@@ -99,18 +99,33 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
         exit 1
       fi
 
+      # Get Azure environment specific domain suffixes
+      SQL_DOMAIN=$(az cloud show --query 'suffixes.sqlServerHostname' -o tsv)
+      # Remove leading dot if present
+      SQL_DOMAIN=${SQL_DOMAIN#.}
+      STORAGE_DOMAIN=$(az cloud show --query 'suffixes.storage' -o tsv)
+      # Remove leading dot if present
+      STORAGE_DOMAIN=${STORAGE_DOMAIN#.}
+      KV_DOMAIN=$(az cloud show --query 'suffixes.keyVaultDns' -o tsv)
+      # Remove leading dot if present
+      KV_DOMAIN=${KV_DOMAIN#.}
+      MONITOR_DOMAIN="privatelink.monitor.azure.com" # TODO: Get this from Azure CLI when available
+
       # Generate FQDNs
       case "$ENDPOINT_TYPE" in
-        "pai") PRIVATE_FQDNS="pai-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com" ;;
-        "sql") PRIVATE_FQDNS="sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.database.windows.net" ;;
-        "stg") PRIVATE_FQDNS="stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.core.windows.net" ;;
-        "pkv") PRIVATE_FQDNS="pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.vaultcore.azure.net" ;;
-        "law") PRIVATE_FQDNS="law-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com" ;;
+        "pai") PRIVATE_FQDNS="pai-${DISCRIMINATOR}-${CLIENT_NAME}.${MONITOR_DOMAIN}" ;;
+        "sql") PRIVATE_FQDNS="sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.${SQL_DOMAIN}" ;;
+        "stg") PRIVATE_FQDNS="stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.${STORAGE_DOMAIN}" ;;
+        "pkv") PRIVATE_FQDNS="pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.${KV_DOMAIN}" ;;
+        "law") PRIVATE_FQDNS="law-${DISCRIMINATOR}-${CLIENT_NAME}.${MONITOR_DOMAIN}" ;;
         "app") echo "Skipping App Service"; \
               echo "{\"privateIps\": [], \"privateFqdns\": []}" > $AZ_SCRIPTS_OUTPUT_PATH; \
               exit 0 ;;
         *) echo "Error: Unsupported type $ENDPOINT_TYPE"; exit 1 ;;
       esac
+      
+      # Remove trailing dots from FQDNs if present
+      PRIVATE_FQDNS=${PRIVATE_FQDNS%.}
 
       if [ -z "$PRIVATE_FQDNS" ]; then
         echo "Error: No FQDNs generated"
@@ -150,12 +165,12 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
       }
       {
         name: 'STORAGE_SUFFIX'
-        value: 'core.windows.net' // Updated to match standard storage suffix
+        value: environment().suffixes.storage // Use environment function to get correct storage suffix
       }
     ]
     timeout: 'PT${timeout}M' // Using parameter value for timeout
-    retentionInterval: 'PT24H' // Increased from PT1H to 24 hours
-    cleanupPreference: 'OnSuccess' // Retain container until retention expires
+    retentionInterval: 'PT6H' // Use 6 hours to maintain logs longer for debugging
+    cleanupPreference: 'Always' // Always clean up, regardless of success or failure
   }
   dependsOn: [uami] // Ensure UAMI is referenced
 }

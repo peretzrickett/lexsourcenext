@@ -40,22 +40,6 @@ module centralVnet 'vnet.bicep' = {
     topology: 'hub'
   }
 }
-
-// Deploy VPN Gateway for secure remote access
-module vpnGateway 'vpn.bicep' = {
-  name: 'vpnGateway'
-  params: {
-    discriminator: discriminator
-    location: location
-    addressPool: '172.16.0.0/24' // VPN client address pool
-    authType: 'Certificate'
-    rootCertData: ''  // This will be provided at deployment time
-  }
-  dependsOn: [
-    centralVnet
-  ]
-}
-
 module privateDnsZone 'privateDnsZone.bicep' = {
   name: 'privateDnsZone'
   params: {
@@ -106,6 +90,7 @@ module frontdoor 'frontDoor.bicep' = {
 }
 
 // Deploy Route Table for routing traffic through the firewall
+// Note: We do NOT apply this to the GatewaySubnet to allow VPN traffic to bypass firewall
 resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
   name: 'RouteTable'
   location: location
@@ -117,6 +102,14 @@ resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
           addressPrefix: '0.0.0.0/0'
           nextHopType: 'VirtualAppliance'
           nextHopIpAddress: firewall.outputs.privateIp
+        }
+      }
+      {
+        // Exclude VPN client address space from routing through firewall
+        name: 'BypassVpnClient'
+        properties: {
+          addressPrefix: '172.16.0.0/24' // VPN client address space
+          nextHopType: 'VirtualNetworkGateway'
         }
       }
     ]

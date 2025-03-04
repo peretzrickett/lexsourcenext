@@ -18,41 +18,65 @@ param tags object = {}
 @description('Environment variables (App Settings) for configuring the App Service')
 param appSettings array = []
 
+@description('Enable public network access for debugging purposes')
+param enablePublicAccess bool = false
+
+@description('CIDR block for the Azure Front Door managed private endpoints')
+param afdManagedEndpointsCidr string = '10.8.0.0/16'
+
 // Create the App Service resource
 resource appService 'Microsoft.Web/sites@2022-03-01' = {
   name: 'app-${discriminator}-${clientName}'
   location: resourceGroup().location  
   properties: {
     serverFarmId: appServicePlanId
-    publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: enablePublicAccess ? 'Enabled' : 'Disabled'
 
     siteConfig: {
       vnetRouteAllEnabled: true // Ensure all outbound traffic follows VNet routes for security
       scmIpSecurityRestrictionsUseMain: true // Apply IP restrictions to the SCM (Kudu) site, matching main site
+      alwaysOn: true // Keep the app always running for better performance
+      minTlsVersion: '1.2' // Enforce TLS 1.2 minimum for security
       appSettings: [
         for setting in appSettings: {
           name: setting.name
           value: setting.value
         }
+        // Add settings for VNet integration
+        {
+          name: 'WEBSITE_VNET_ROUTE_ALL'
+          value: '1'
+        }
+        {
+          name: 'WEBSITE_DNS_SERVER'
+          value: '168.63.129.16' // Azure DNS server for private DNS resolution
+        }
       ]
       ipSecurityRestrictions: [
         {
-          name: 'AllowPrivateSubnet'
+          name: 'AllowVNetSubnet'
           priority: 100
           action: 'Allow'
-          vnetSubnetResourceId: subnetId // Allow traffic only from the FrontEnd subnet
+          vnetSubnetResourceId: subnetId // Allow traffic from the FrontEnd subnet
           description: 'Allow traffic from the FrontEnd subnet for secure access'
         }
         {
-          name: 'DenyPublic'
-          priority: 200
-          action: 'Deny'
-          ipAddress: '0.0.0.0/0' // Block all public traffic for enhanced security
-          description: 'Deny all public internet access'
+          name: 'AllowFrontDoorEndpoints'
+          priority: 110
+          action: 'Allow'
+          ipAddress: afdManagedEndpointsCidr
+          description: 'Allow traffic from Azure Front Door managed private endpoints'
+        }
+        {
+          name: 'AllowFrontDoorService'
+          priority: 120
+          action: 'Allow'
+          ipAddress: 'AzureFrontDoor.Backend'
+          tag: 'ServiceTag'
+          description: 'Allow traffic from Azure Front Door service'
         }
       ]
     }
-
     httpsOnly: true  // Enforce HTTPS for secure communication
   }
   tags: tags
@@ -65,24 +89,8 @@ resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2022-03-01' = {
   parent: appService
   properties: {
     subnetResourceId: subnetId  // Integrate App Service with the FrontEnd subnet in the spoke VNet
+    swiftSupported: true
   }
-}
-
-resource appServiceRestrictions 'Microsoft.Web/sites/config@2022-03-01' = {
-  name: 'web'
-  parent: appService
-  properties: {
-    ipSecurityRestrictions: [
-      {
-        name: 'AllowVNetOnly'
-        action: 'Allow'
-        priority: 100
-        vnetSubnetResourceId: subnetId  // Restrict access to only FrontEnd VNet traffic for security
-        description: 'Allow traffic only from the FrontEnd VNet for enhanced isolation'
-      }
-    ]
-  }
-  dependsOn: [vnetIntegration]
 }
 
 @description('The resource ID of the deployed App Service')
@@ -93,3 +101,6 @@ output defaultHostName string = appService.properties.defaultHostName
 
 @description('The name of the App Service for reference')
 output name string = appService.name
+
+@description('The outbound IP addresses of the App Service')
+output outboundIpAddresses array = split(appService.properties.outboundIpAddresses, ',')

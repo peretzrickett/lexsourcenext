@@ -10,7 +10,10 @@ param discriminator string
 param location string
 
 @description('CIDR block for the Azure Front Door private IP range for secure access')
-param frontDoorPrivateIp string
+param frontDoorPrivateIp string = '10.0.0.0/16'
+
+@description('CIDR block for the Azure Front Door managed private endpoints')
+param afdManagedEndpointsCidr string = '10.8.0.0/16'
 
 // Create Backend NSG to allow only VNet traffic for internal security
 resource backendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
@@ -32,32 +35,19 @@ resource backendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           description: 'Allow traffic within the virtual network for secure communication'
         }
       }
-      {
-        name: 'Deny-All-Inbound'
-        properties: {
-          priority: 4096
-          direction: 'Inbound'
-          access: 'Deny'
-          protocol: '*'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '*'
-          description: 'Deny all other inbound traffic for security'
-        }
-      }
+      // No Deny-All rule to allow proper functioning in a Hub-Spoke model
     ]
   }
 }
 
-// Create Frontend NSG to allow only Front Door private IP for secure inbound access
+// Create Frontend NSG to allow Front Door access
 resource frontendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
   name: 'nsg-${discriminator}-${clientName}-frontend'
   location: location
   properties: {
     securityRules: [
       {
-        name: 'Allow-FrontDoor-Private-IP'
+        name: 'Allow-Hub-VNet'
         properties: {
           priority: 100
           direction: 'Inbound'
@@ -67,35 +57,50 @@ resource frontendNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
-          description: 'Allow traffic from Azure Front Door private IP for secure access'
+          description: 'Allow traffic from Hub VNet for secure access'
         }
       }
       {
-        name: 'Deny-All-Inbound'
+        name: 'Allow-AFD-Managed-Endpoints'
         properties: {
-          priority: 4096
+          priority: 110
           direction: 'Inbound'
-          access: 'Deny'
+          access: 'Allow'
           protocol: '*'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: afdManagedEndpointsCidr
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
-          description: 'Deny all other inbound traffic for security'
+          description: 'Allow traffic from Azure Front Door managed private endpoints'
         }
       }
+      {
+        name: 'Allow-AFD-Service'
+        properties: {
+          priority: 120
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: 'AzureFrontDoor.Backend'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+          description: 'Allow traffic from Azure Front Door service tag'
+        }
+      }
+      // No Deny-All rule to allow proper functioning in a Hub-Spoke model
     ]
   }
 }
 
-// Create PrivateLink NSG to allow only Front Door private IP for secure private link access
+// Create PrivateLink NSG with same rules as frontend
 resource privatelinkNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
   name: 'nsg-${discriminator}-${clientName}-privatelink'
   location: location
   properties: {
     securityRules: [
       {
-        name: 'Allow-FrontDoor-Private-IP'
+        name: 'Allow-Hub-VNet'
         properties: {
           priority: 100
           direction: 'Inbound'
@@ -105,23 +110,38 @@ resource privatelinkNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
-          description: 'Allow traffic from Azure Front Door private IP for secure private link access'
+          description: 'Allow traffic from Hub VNet for secure access'
         }
       }
       {
-        name: 'Deny-All-Inbound'
+        name: 'Allow-AFD-Managed-Endpoints'
         properties: {
-          priority: 4096
+          priority: 110
           direction: 'Inbound'
-          access: 'Deny'
+          access: 'Allow'
           protocol: '*'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: afdManagedEndpointsCidr
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '*'
-          description: 'Deny all other inbound traffic for security'
+          description: 'Allow traffic from Azure Front Door managed private endpoints'
         }
       }
+      {
+        name: 'Allow-AFD-Service'
+        properties: {
+          priority: 120
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: 'AzureFrontDoor.Backend'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+          description: 'Allow traffic from Azure Front Door service tag'
+        }
+      }
+      // No Deny-All rule to allow proper functioning in a Hub-Spoke model
     ]
   }
 }

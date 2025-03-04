@@ -131,7 +131,7 @@ resource networkRuleCollectionGroup 'Microsoft.Network/firewallPolicies/ruleColl
             name: 'AllowVMOutbound'
             sourceAddresses: ['10.0.2.0/24'] // OtherServices subnet containing VM
             destinationAddresses: ['*']      // Any destination
-            ipProtocols: ['TCP']
+            ipProtocols: ['Any']            // Any protocol - TCP, UDP, ICMP 
             destinationPorts: ['*']          // Any port
           }
           {
@@ -141,6 +141,38 @@ resource networkRuleCollectionGroup 'Microsoft.Network/firewallPolicies/ruleColl
             destinationAddresses: ['10.0.0.0/8'] // All clients in 10.x.x.x range
             ipProtocols: ['Any']  // Allow all protocols including TCP, UDP, ICMP
             destinationPorts: ['*']          // Any port
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowVPNInbound'
+            sourceAddresses: ['*'] // Any source address for VPN clients
+            destinationAddresses: ['10.0.3.0/26'] // Gateway Subnet with VPN Gateway
+            ipProtocols: ['UDP', 'TCP'] // VPN protocols
+            destinationPorts: ['500', '4500', '1701', '1723', '443'] // IKE, IKEv2, L2TP, PPTP, OpenVPN
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowVPNClientTraffic'
+            sourceAddresses: ['172.16.0.0/24'] // VPN Client Address Pool
+            destinationAddresses: ['*'] // All destinations
+            ipProtocols: ['Any'] // All protocols
+            destinationPorts: ['*'] // All ports
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowFromFrontDoor'
+            sourceAddresses: ['10.8.0.0/16'] // Azure Front Door managed private endpoints
+            destinationAddresses: ['10.0.0.0/8'] // All resources in your network
+            ipProtocols: ['Any'] // All protocols
+            destinationPorts: ['*'] // All ports
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowFrontDoorServiceTag'
+            sourceAddresses: ['AzureFrontDoor.Backend'] // Azure Front Door service tag
+            destinationAddresses: ['10.0.0.0/8'] // All resources in your network
+            ipProtocols: ['Any'] // All protocols
+            destinationPorts: ['*'] // All ports
           }
         ]
       }
@@ -157,6 +189,65 @@ resource networkRuleCollectionGroup 'Microsoft.Network/firewallPolicies/ruleColl
   }
   dependsOn: [
     natRuleCollectionGroup // Ensure NAT rules are created first
+  ]
+}
+
+// Create application rules for web access
+resource applicationRuleCollectionGroup 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2022-05-01' = {
+  parent: firewallPolicy
+  name: 'DefaultApplicationRuleCollectionGroup'
+  properties: {
+    priority: 300
+    ruleCollections: [
+      {
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        name: 'AllowWebAccess'
+        priority: 300
+        action: {
+          type: 'Allow'
+        }
+        rules: [
+          {
+            ruleType: 'ApplicationRule'
+            name: 'AllowVPNClientsWeb'
+            sourceAddresses: ['172.16.0.0/24'] // VPN Client Address Pool
+            protocols: [
+              {
+                protocolType: 'Http'
+                port: 80
+              }
+              {
+                protocolType: 'Https'
+                port: 443
+              }
+            ]
+            targetFqdns: ['*']
+          }
+          {
+            ruleType: 'ApplicationRule'
+            name: 'AllowFrontDoorToWebApps'
+            sourceAddresses: ['10.8.0.0/16'] // Azure Front Door managed private endpoints
+            protocols: [
+              {
+                protocolType: 'Http'
+                port: 80
+              }
+              {
+                protocolType: 'Https'
+                port: 443
+              }
+            ]
+            targetFqdns: [
+              '*.azurewebsites.net'
+              '*.privatelink.azurewebsites.net'
+            ]
+          }
+        ]
+      }
+    ]
+  }
+  dependsOn: [
+    networkRuleCollectionGroup
   ]
 }
 
@@ -185,6 +276,7 @@ resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
   dependsOn: [
     natRuleCollectionGroup
     networkRuleCollectionGroup
+    applicationRuleCollectionGroup
   ]
 }
 

@@ -11,21 +11,42 @@ DEPLOYMENT_NAME="bicep-$(date +%Y%m%d%H%M%S)"
 # Function to play sound (uses macOS afplay, fallback to other players)
 play_sound() {
     local sound_file=$1
+    
+    # Check if the sound file exists
+    if [ ! -f "$sound_file" ]; then
+        echo "Sound file not found: $sound_file"
+        return 1
+    fi
+    
+    # Try to play the sound with available players
     if command -v afplay &> /dev/null; then
-        afplay "$sound_file" 2>/dev/null || echo "Sound playback failed (afplay)"
+        afplay "$sound_file" &>/dev/null &
     elif command -v paplay &> /dev/null; then
-        paplay "$sound_file" 2>/dev/null || echo "Sound playback failed (paplay)"
+        paplay "$sound_file" &>/dev/null &
     elif command -v play &> /dev/null; then
-        play "$sound_file" 2>/dev/null || echo "Sound playback failed (play)"
+        play "$sound_file" &>/dev/null &
     else
         echo "Sound playback not supported (no compatible player found)"
+        return 1
     fi
+    
+    # Give a small delay to let the sound start playing
+    sleep 0.5
+    return 0
 }
 
-# Check if az CLI is installed and logged in
+# Check prerequisites
 if ! command -v az &> /dev/null; then
     echo "Error: Azure CLI is not installed. Please install it first."
     exit 1
+fi
+
+if ! command -v jq &> /dev/null; then
+    echo "Warning: jq is not installed. Error output will not be formatted nicely."
+    # Define simplified jq function if not available
+    jq() {
+        cat -
+    }
 fi
 
 # Check if user is logged in to Azure
@@ -221,6 +242,13 @@ else
             DEPLOYMENT_STATUS=0
         fi
     fi
+    
+    # Check for non-critical errors like RoleAssignmentExists
+    ERROR_OUTPUT=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query "properties.error" -o json 2>/dev/null)
+    if [ -n "$ERROR_OUTPUT" ] && echo "$ERROR_OUTPUT" | grep -q "RoleAssignmentExists"; then
+        echo "Detected non-critical error: Role assignment already exists. Treating as success."
+        DEPLOYMENT_STATUS=0
+    fi
 fi
 
 # Get deployment status - use first PIPESTATUS for timeout version, or the stored DEPLOYMENT_STATUS for background version
@@ -240,13 +268,25 @@ else
     echo "Deployment failed!"
     play_sound "$LOSER_SOUND"
 
-    # Save error details to file
-    cat deployment_output.log > "$OUTPUT_FILE"
-    echo "Error details saved to $OUTPUT_FILE"
-    
-    # Try to extract error message for console output
-    echo "Error summary:"
-    grep -A 5 "\"error\":" deployment_output.log | head -n 10 || echo "Could not parse error details"
+    # Get and format error details
+    ERROR_JSON=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query "properties.error" -o json 2>/dev/null)
+    if [ -n "$ERROR_JSON" ]; then
+        # Save formatted JSON to file
+        echo "$ERROR_JSON" | jq '.' > "$OUTPUT_FILE"
+        echo "Error details saved to $OUTPUT_FILE"
+        
+        # Display formatted error summary
+        echo "Error summary:"
+        echo "$ERROR_JSON" | jq '.'
+    else
+        # Fallback to log file if API doesn't return error details
+        cat deployment_output.log > "$OUTPUT_FILE"
+        echo "Error details saved to $OUTPUT_FILE"
+        
+        # Try to extract error message for console output
+        echo "Error summary (raw log):"
+        grep -A 5 "\"error\":" deployment_output.log | head -n 10 || echo "Could not parse error details"
+    fi
 fi
 
 # Clean up temp file

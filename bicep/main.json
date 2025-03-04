@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.33.93.31351",
-      "templateHash": "14147080066293993600"
+      "templateHash": "1287626766300365694"
     }
   },
   "parameters": {
@@ -27,6 +27,27 @@
       "defaultValue": "lexsb",
       "metadata": {
         "description": "Unique qualifier for resource naming to avoid conflicts"
+      }
+    },
+    "deployVpn": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to deploy VPN Gateway as part of the deployment"
+      }
+    },
+    "vpnRootCertName": {
+      "type": "string",
+      "defaultValue": "P2SRootCert",
+      "metadata": {
+        "description": "VPN certificate name for P2S VPN authentication"
+      }
+    },
+    "vpnRootCertData": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "VPN certificate data for P2S VPN authentication (base64-encoded .cer file). If not provided, a certificate will be generated automatically."
       }
     }
   },
@@ -195,7 +216,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.33.93.31351",
-              "templateHash": "848174285276006244"
+              "templateHash": "708577775013343468"
             }
           },
           "parameters": {
@@ -266,6 +287,15 @@
               }
             }
           },
+          "variables": {
+            "copy": [
+              {
+                "name": "clientPrivateLinkSubnets",
+                "count": "[length(parameters('clientNames'))]",
+                "input": "[format('10.{0}.3.0/24', add(indexOf(parameters('clientNames'), parameters('clientNames')[copyIndex('clientPrivateLinkSubnets')]), 1))]"
+              }
+            ]
+          },
           "resources": [
             {
               "type": "Microsoft.Network/routeTables",
@@ -280,6 +310,13 @@
                       "addressPrefix": "0.0.0.0/0",
                       "nextHopType": "VirtualAppliance",
                       "nextHopIpAddress": "[reference(resourceId('Microsoft.Resources/deployments', 'firewall'), '2022-09-01').outputs.privateIp.value]"
+                    }
+                  },
+                  {
+                    "name": "BypassVpnClient",
+                    "properties": {
+                      "addressPrefix": "172.16.0.0/24",
+                      "nextHopType": "VirtualNetworkGateway"
                     }
                   }
                 ]
@@ -662,7 +699,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.33.93.31351",
-                      "templateHash": "14599907349237042825"
+                      "templateHash": "7685150335049268593"
                     }
                   },
                   "parameters": {
@@ -686,7 +723,7 @@
                           "linkType": "app"
                         },
                         {
-                          "zoneName": "[format('privatelink{0}', environment().suffixes.sqlServerHostname)]",
+                          "zoneName": "[format('privatelink.{0}', environment().suffixes.sqlServerHostname)]",
                           "linkType": "sql"
                         },
                         {
@@ -722,16 +759,19 @@
                   "variables": {
                     "copy": [
                       {
-                        "name": "privateDnsZoneNames",
+                        "name": "cleanedZones",
                         "count": "[length(parameters('privateDnsZonesMetadata'))]",
-                        "input": "[parameters('privateDnsZonesMetadata')[copyIndex('privateDnsZoneNames')].zoneName]"
+                        "input": {
+                          "zoneName": "[replace(parameters('privateDnsZonesMetadata')[copyIndex('cleanedZones')].zoneName, '..', '.')]",
+                          "linkType": "[parameters('privateDnsZonesMetadata')[copyIndex('cleanedZones')].linkType]"
+                        }
                       },
                       {
                         "name": "dnsLinks",
-                        "count": "[length(range(0, mul(length(parameters('clientNames')), length(variables('privateDnsZoneNames')))))]",
+                        "count": "[length(range(0, mul(length(parameters('clientNames')), length(variables('cleanedZones')))))]",
                         "input": {
-                          "clientName": "[parameters('clientNames')[div(range(0, mul(length(parameters('clientNames')), length(variables('privateDnsZoneNames'))))[copyIndex('dnsLinks')], length(variables('privateDnsZoneNames')))]]",
-                          "zoneName": "[variables('privateDnsZoneNames')[mod(range(0, mul(length(parameters('clientNames')), length(variables('privateDnsZoneNames'))))[copyIndex('dnsLinks')], length(variables('privateDnsZoneNames')))]]"
+                          "clientName": "[parameters('clientNames')[div(range(0, mul(length(parameters('clientNames')), length(variables('cleanedZones'))))[copyIndex('dnsLinks')], length(variables('cleanedZones')))]]",
+                          "zone": "[variables('cleanedZones')[mod(range(0, mul(length(parameters('clientNames')), length(variables('cleanedZones'))))[copyIndex('dnsLinks')], length(variables('cleanedZones')))]]"
                         }
                       }
                     ]
@@ -740,21 +780,21 @@
                     {
                       "copy": {
                         "name": "privateDnsZones",
-                        "count": "[length(variables('privateDnsZoneNames'))]"
+                        "count": "[length(variables('cleanedZones'))]"
                       },
                       "type": "Microsoft.Network/privateDnsZones",
                       "apiVersion": "2020-06-01",
-                      "name": "[variables('privateDnsZoneNames')[copyIndex()]]",
+                      "name": "[variables('cleanedZones')[copyIndex()].zoneName]",
                       "location": "global"
                     },
                     {
                       "copy": {
                         "name": "privateDnsLinksToHub",
-                        "count": "[length(variables('privateDnsZoneNames'))]"
+                        "count": "[length(variables('cleanedZones'))]"
                       },
                       "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
                       "apiVersion": "2020-06-01",
-                      "name": "[format('{0}/{1}', variables('privateDnsZoneNames')[copyIndex()], format('dnsl-{0}-central-{1}', parameters('discriminator'), variables('privateDnsZoneNames')[copyIndex()]))]",
+                      "name": "[format('{0}/{1}', variables('cleanedZones')[copyIndex()].zoneName, format('dnsl-{0}-central-{1}', parameters('discriminator'), variables('cleanedZones')[copyIndex()].zoneName))]",
                       "location": "global",
                       "properties": {
                         "virtualNetwork": {
@@ -763,8 +803,8 @@
                         "registrationEnabled": false
                       },
                       "dependsOn": [
-                        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[copyIndex()])]",
-                        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[copyIndex()])]"
+                        "[resourceId('Microsoft.Network/privateDnsZones', variables('cleanedZones')[copyIndex()].zoneName)]",
+                        "[resourceId('Microsoft.Network/privateDnsZones', variables('cleanedZones')[copyIndex()].zoneName)]"
                       ]
                     },
                     {
@@ -774,7 +814,7 @@
                       },
                       "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
                       "apiVersion": "2020-06-01",
-                      "name": "[format('{0}/{1}', variables('privateDnsZoneNames')[indexOf(variables('privateDnsZoneNames'), variables('dnsLinks')[copyIndex()].zoneName)], format('dnsl-{0}-{1}-{2}', parameters('discriminator'), variables('dnsLinks')[copyIndex()].clientName, variables('dnsLinks')[copyIndex()].zoneName))]",
+                      "name": "[format('{0}/{1}', variables('cleanedZones')[indexOf(variables('cleanedZones'), variables('dnsLinks')[copyIndex()].zone)].zoneName, format('dnsl-{0}-{1}-{2}', parameters('discriminator'), variables('dnsLinks')[copyIndex()].clientName, variables('dnsLinks')[copyIndex()].zone.zoneName))]",
                       "location": "global",
                       "properties": {
                         "virtualNetwork": {
@@ -783,19 +823,19 @@
                         "registrationEnabled": false
                       },
                       "dependsOn": [
-                        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[indexOf(variables('privateDnsZoneNames'), variables('dnsLinks')[copyIndex()].zoneName)])]"
+                        "[resourceId('Microsoft.Network/privateDnsZones', variables('cleanedZones')[indexOf(variables('cleanedZones'), variables('dnsLinks')[copyIndex()].zone)].zoneName)]"
                       ]
                     },
                     {
                       "copy": {
                         "name": "createDnsRecords",
-                        "count": "[length(variables('privateDnsZoneNames'))]",
+                        "count": "[length(variables('cleanedZones'))]",
                         "mode": "serial",
                         "batchSize": 3
                       },
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
-                      "name": "[format('createDnsRecords-{0}-{1}', variables('privateDnsZoneNames')[copyIndex()], copyIndex())]",
+                      "name": "[format('createDnsRecords-{0}-{1}', variables('cleanedZones')[copyIndex()].zoneName, copyIndex())]",
                       "properties": {
                         "expressionEvaluationOptions": {
                           "scope": "inner"
@@ -809,10 +849,10 @@
                             "value": "[parameters('discriminator')]"
                           },
                           "privateDnsZoneName": {
-                            "value": "[variables('privateDnsZoneNames')[copyIndex()]]"
+                            "value": "[variables('cleanedZones')[copyIndex()].zoneName]"
                           },
                           "endpointType": {
-                            "value": "[parameters('privateDnsZonesMetadata')[copyIndex()].linkType]"
+                            "value": "[variables('cleanedZones')[copyIndex()].linkType]"
                           }
                         },
                         "template": {
@@ -822,7 +862,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.33.93.31351",
-                              "templateHash": "16478426447501899170"
+                              "templateHash": "10308993898065410561"
                             }
                           },
                           "parameters": {
@@ -873,7 +913,7 @@
                               },
                               "properties": {
                                 "azCliVersion": "2.40.0",
-                                "scriptContent": "      #!/bin/bash\n      set -e\n\n      RESOURCE_GROUP=\"rg-central\"\n      DNS_ZONE_NAME=\"$privateDnsZoneName\"\n      SUBSCRIPTION_ID=$(az account show --query id -o tsv)\n\n      echo \"Subscription: $SUBSCRIPTION_ID\"\n      echo \"Resource Group: $RESOURCE_GROUP\"\n      echo \"DNS Zone: $DNS_ZONE_NAME\"\n      echo \"Endpoint Type: $ENDPOINT_TYPE\"\n      echo \"Clients: $clientNames\"\n\n      # Validate subscription context\n      if [ -z \"$SUBSCRIPTION_ID\" ]; then\n        echo \"Error: Subscription ID is empty\"\n        exit 1\n      fi\n      az account set --subscription \"$SUBSCRIPTION_ID\" || {\n        echo \"Error: Failed to set subscription $SUBSCRIPTION_ID\"\n        exit 1\n      }\n\n      # Handle App Service (skipped as AFD-managed)\n      if [ \"$ENDPOINT_TYPE\" = \"app\" ]; then\n        echo \"Skipping App Service DNS - managed by AFD\"\n        echo \"{\\\"privateDnsRecords\\\": \\\"Skipped App Service DNS records, managed by AFD\\\"}\" \\\n          > $AZ_SCRIPTS_OUTPUT_PATH\n        exit 0\n      fi\n\n      # Collect IPs and FQDNs from spoke deployments\n      ALL_IPS=\"\"\n      ALL_FQDNS=\"\"\n      for SPOKE in ${clientNames//,/ }; do\n        echo \"Checking rg-$SPOKE for $ENDPOINT_TYPE...\"\n        IPS=$(az deployment group show \\\n          -g \"rg-$SPOKE\" \\\n          -n \"extractPrivateIp-$SPOKE-$ENDPOINT_TYPE\" \\\n          --query \"properties.outputs.privateIps.value\" \\\n          -o tsv 2>/dev/null || echo \"\")\n        FQDNS=$(az deployment group show \\\n          -g \"rg-$SPOKE\" \\\n          -n \"extractPrivateIp-$SPOKE-$ENDPOINT_TYPE\" \\\n          --query \"properties.outputs.privateFqdns.value\" \\\n          -o tsv 2>/dev/null || echo \"\")\n        ALL_IPS=\"$ALL_IPS,$IPS\"\n        ALL_FQDNS=\"$ALL_FQDNS,$FQDNS\"\n      done\n\n      # Clean and validate collected data\n      IPS=$(echo \"$ALL_IPS\" | tr ',' '\\n' | sort -u | grep -v \"^$\" | tr '\\n' ' ')\n      FQDNS=$(echo \"$ALL_FQDNS\" | tr ',' '\\n' | sort -u | grep -v \"^$\" | tr '\\n' ' ')\n      echo \"Collected IPs: $IPS\"\n      echo \"Collected FQDNs: $FQDNS\"\n\n      if [ -z \"$IPS\" ] || [ -z \"$FQDNS\" ]; then\n        echo \"Error: No valid IPs or FQDNs for $ENDPOINT_TYPE\"\n        echo \"{\\\"privateDnsRecords\\\": \\\"Failed: No valid IPs or FQDNs for $ENDPOINT_TYPE\\\"}\" \\\n          > $AZ_SCRIPTS_OUTPUT_PATH\n        exit 1\n      fi\n\n      # Create DNS A records\n      for fqdn in $FQDNS; do\n        for ip in $IPS; do\n          echo \"Checking A record for $fqdn -> $ip...\"\n          if ! az network private-dns record-set a show \\\n            -g \"$RESOURCE_GROUP\" \\\n            -z \"$DNS_ZONE_NAME\" \\\n            -n \"$fqdn\" \\\n            --query \"aRecords[?ipv4Address=='$ip']\" \\\n            -o tsv 2>/dev/null; then\n            echo \"Creating A record for $fqdn -> $ip\"\n            az network private-dns record-set a create \\\n              -g \"$RESOURCE_GROUP\" \\\n              -z \"$DNS_ZONE_NAME\" \\\n              -n \"$fqdn\" \\\n              --ttl 3600 || {\n              echo \"Error: Failed to create A record for $fqdn\"\n              exit 1\n            }\n            az network private-dns record-set a add-record \\\n              -g \"$RESOURCE_GROUP\" \\\n              -z \"$DNS_ZONE_NAME\" \\\n              -n \"$fqdn\" \\\n              --ipv4-address \"$ip\" || {\n              echo \"Error: Failed to add IP $ip to $fqdn\"\n              exit 1\n            }\n          else\n            echo \"A record for $fqdn -> $ip exists, skipping\"\n          fi\n        done\n      done\n\n      echo \"Created DNS records for $ENDPOINT_TYPE\"\n      echo \"{\\\"privateDnsRecords\\\": \\\"Created A records for $ENDPOINT_TYPE\\\"}\" \\\n        > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
+                                "scriptContent": "      #!/bin/bash\n      set -e\n\n      RESOURCE_GROUP=\"rg-central\"\n      DNS_ZONE_NAME=\"$privateDnsZoneName\"\n      SUBSCRIPTION_ID=$(az account show --query id -o tsv)\n\n      echo \"Subscription: $SUBSCRIPTION_ID\"\n      echo \"Resource Group: $RESOURCE_GROUP\"\n      echo \"DNS Zone: $DNS_ZONE_NAME\"\n      echo \"Endpoint Type: $ENDPOINT_TYPE\"\n      echo \"Clients: $clientNames\"\n\n      # Validate subscription context\n      if [ -z \"$SUBSCRIPTION_ID\" ]; then\n        echo \"Error: Subscription ID is empty\"\n        exit 1\n      fi\n      az account set --subscription \"$SUBSCRIPTION_ID\" || {\n        echo \"Error: Failed to set subscription $SUBSCRIPTION_ID\"\n        exit 1\n      }\n\n      # Handle App Service (skipped as AFD-managed)\n      if [ \"$ENDPOINT_TYPE\" = \"app\" ]; then\n        echo \"Skipping App Service DNS - managed by AFD\"\n        echo \"{\\\"privateDnsRecords\\\": \\\"Skipped App Service DNS records, managed by AFD\\\"}\" \\\n          > $AZ_SCRIPTS_OUTPUT_PATH\n        exit 0\n      fi\n\n      # Collect IPs and FQDNs from spoke deployments\n      ALL_IPS=\"\"\n      ALL_FQDNS=\"\"\n      for SPOKE in ${clientNames//,/ }; do\n        echo \"Checking rg-$SPOKE for $ENDPOINT_TYPE...\"\n        # Search for any deployment that starts with extractIp and contains the endpoint type\n        EXTRACT_IP_DEPLOYMENT=$(az deployment group list \\\n          -g \"rg-$SPOKE\" \\\n          --query \"[?starts_with(name, 'extractIp-${SPOKE}-${ENDPOINT_TYPE}')].name\" \\\n          -o tsv 2>/dev/null | head -1)\n        \n        if [ -z \"$EXTRACT_IP_DEPLOYMENT\" ]; then\n          echo \"No extractor deployment found for $SPOKE-$ENDPOINT_TYPE\"\n          continue\n        fi\n          \n        echo \"Found deployment: $EXTRACT_IP_DEPLOYMENT\"\n        IPS=$(az deployment group show \\\n          -g \"rg-$SPOKE\" \\\n          -n \"$EXTRACT_IP_DEPLOYMENT\" \\\n          --query \"properties.outputs.privateIps.value\" \\\n          -o tsv 2>/dev/null || echo \"\")\n        FQDNS=$(az deployment group show \\\n          -g \"rg-$SPOKE\" \\\n          -n \"$EXTRACT_IP_DEPLOYMENT\" \\\n          --query \"properties.outputs.privateFqdns.value\" \\\n          -o tsv 2>/dev/null || echo \"\")\n        ALL_IPS=\"$ALL_IPS,$IPS\"\n        ALL_FQDNS=\"$ALL_FQDNS,$FQDNS\"\n      done\n\n      # Clean and validate collected data\n      IPS=$(echo \"$ALL_IPS\" | tr ',' '\\n' | sort -u | grep -v \"^$\" | tr '\\n' ' ')\n      FQDNS=$(echo \"$ALL_FQDNS\" | tr ',' '\\n' | sort -u | grep -v \"^$\" | tr '\\n' ' ')\n      echo \"Collected IPs: $IPS\"\n      echo \"Collected FQDNs: $FQDNS\"\n\n      if [ -z \"$IPS\" ] || [ -z \"$FQDNS\" ]; then\n        echo \"Error: No valid IPs or FQDNs for $ENDPOINT_TYPE\"\n        echo \"{\\\"privateDnsRecords\\\": \\\"Failed: No valid IPs or FQDNs for $ENDPOINT_TYPE\\\"}\" \\\n          > $AZ_SCRIPTS_OUTPUT_PATH\n        exit 1\n      fi\n\n      # Create DNS A records\n      for fqdn in $FQDNS; do\n        # Remove trailing dots from FQDN if present\n        fqdn=${fqdn%.}\n        for ip in $IPS; do\n          echo \"Checking A record for $fqdn -> $ip...\"\n          if ! az network private-dns record-set a show \\\n            -g \"$RESOURCE_GROUP\" \\\n            -z \"$DNS_ZONE_NAME\" \\\n            -n \"$fqdn\" \\\n            --query \"aRecords[?ipv4Address=='$ip']\" \\\n            -o tsv 2>/dev/null; then\n            echo \"Creating A record for $fqdn -> $ip\"\n            az network private-dns record-set a create \\\n              -g \"$RESOURCE_GROUP\" \\\n              -z \"$DNS_ZONE_NAME\" \\\n              -n \"$fqdn\" \\\n              --ttl 3600 || {\n              echo \"Error: Failed to create A record for $fqdn\"\n              exit 1\n            }\n            az network private-dns record-set a add-record \\\n              -g \"$RESOURCE_GROUP\" \\\n              -z \"$DNS_ZONE_NAME\" \\\n              -n \"$fqdn\" \\\n              --ipv4-address \"$ip\" || {\n              echo \"Error: Failed to add IP $ip to $fqdn\"\n              exit 1\n            }\n          else\n            echo \"A record for $fqdn -> $ip exists, skipping\"\n          fi\n        done\n      done\n\n      echo \"Created DNS records for $ENDPOINT_TYPE\"\n      echo \"{\\\"privateDnsRecords\\\": \\\"Created A records for $ENDPOINT_TYPE\\\"}\" \\\n        > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
                                 "environmentVariables": [
                                   {
                                     "name": "clientNames",
@@ -889,8 +929,8 @@
                                   }
                                 ],
                                 "timeout": "[format('PT{0}S', parameters('timeout'))]",
-                                "retentionInterval": "PT1H",
-                                "cleanupPreference": "OnSuccess"
+                                "retentionInterval": "PT6H",
+                                "cleanupPreference": "Always"
                               },
                               "dependsOn": [
                                 "privateIpExtractor"
@@ -904,7 +944,7 @@
                               "condition": "[not(equals(parameters('endpointType'), 'app'))]",
                               "type": "Microsoft.Resources/deployments",
                               "apiVersion": "2022-09-01",
-                              "name": "[format('extractPrivateIp-{0}-{1}', parameters('clientNames')[copyIndex()], parameters('endpointType'))]",
+                              "name": "[format('extractIp-{0}-{1}-{2}', parameters('clientNames')[copyIndex()], parameters('endpointType'), uniqueString(resourceGroup().id, deployment().name))]",
                               "resourceGroup": "[format('rg-{0}', parameters('clientNames')[copyIndex()])]",
                               "properties": {
                                 "expressionEvaluationOptions": {
@@ -933,7 +973,7 @@
                                     "_generator": {
                                       "name": "bicep",
                                       "version": "0.33.93.31351",
-                                      "templateHash": "11742486970552839752"
+                                      "templateHash": "12147592847880662269"
                                     }
                                   },
                                   "parameters": {
@@ -997,7 +1037,7 @@
                                       },
                                       "properties": {
                                         "azCliVersion": "2.40.0",
-                                        "scriptContent": "      #!/bin/bash\n      set -e\n\n      echo \"Subscription ID: $SUBSCRIPTION_ID\"\n      echo \"Private Endpoint ID: $PRIVATE_ENDPOINT_ID\"\n      echo \"Service Type: $ENDPOINT_TYPE\"\n\n      # Quick subscription check\n      if [ -z \"$SUBSCRIPTION_ID\" ]; then\n        echo \"Error: Subscription ID is empty\"\n        exit 1\n      fi\n      az account set --subscription \"$SUBSCRIPTION_ID\" || {\n        echo \"Error: Failed to set subscription\"\n        exit 1\n      }\n\n      # Get Private IPs with timeout\n      PRIVATE_IPS=$(timeout 120s az network private-endpoint show \\\n        --ids \"$PRIVATE_ENDPOINT_ID\" \\\n        --query \"networkInterfaces[*].ipConfigurations[*].privateIPAddress\" \\\n        -o tsv 2>/dev/null | sort -u | tr '\\n' ',' | sed 's/,$//')\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"No IPs found, checking NICs (limited to first NIC)...\"\n        NIC_ID=$(timeout 60s az network private-endpoint show \\\n          --ids \"$PRIVATE_ENDPOINT_ID\" \\\n          --query \"networkInterfaces[0].id\" \\\n          -o tsv 2>/dev/null)\n        if [ -n \"$NIC_ID\" ]; then\n          PRIVATE_IPS=$(timeout 60s az network nic show \\\n            --ids \"$NIC_ID\" \\\n            --query \"ipConfigurations[?contains(name, 'privateEndpointIpConfig')].privateIpAddress\" \\\n            -o tsv 2>/dev/null | head -n 1)\n        fi\n      fi\n\n      # Validate IPs\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"Error: No valid private IPs found\"\n        exit 1\n      fi\n      VALID_IPS=\"\"\n      for IP in $(echo \"$PRIVATE_IPS\" | tr ',' '\\n'); do\n        if [[ \"$IP\" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then\n          VALID_IPS=\"$VALID_IPS,$IP\"\n        fi\n      done\n      PRIVATE_IPS=$(echo \"$VALID_IPS\" | sed 's/^,//' | tr '\\n' ',' | sed 's/,$//')\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"Error: No valid IPs after validation\"\n        exit 1\n      fi\n\n      # Generate FQDNs\n      case \"$ENDPOINT_TYPE\" in\n        \"pai\") PRIVATE_FQDNS=\"pai-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com\" ;;\n        \"sql\") PRIVATE_FQDNS=\"sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.database.windows.net\" ;;\n        \"stg\") PRIVATE_FQDNS=\"stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.core.windows.net\" ;;\n        \"pkv\") PRIVATE_FQDNS=\"pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.vaultcore.azure.net\" ;;\n        \"law\") PRIVATE_FQDNS=\"law-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com\" ;;\n        \"app\") echo \"Skipping App Service\"; \\\n              echo \"{\\\"privateIps\\\": [], \\\"privateFqdns\\\": []}\" > $AZ_SCRIPTS_OUTPUT_PATH; \\\n              exit 0 ;;\n        *) echo \"Error: Unsupported type $ENDPOINT_TYPE\"; exit 1 ;;\n      esac\n\n      if [ -z \"$PRIVATE_FQDNS\" ]; then\n        echo \"Error: No FQDNs generated\"\n        exit 1\n      fi\n\n      # Output results\n      echo \"Private IPs: $PRIVATE_IPS\"\n      echo \"Private FQDNs: $PRIVATE_FQDNS\"\n      echo \"{\\\"privateIps\\\": [\\\"${PRIVATE_IPS//,/\\\",\\\"}\\\"], \\\"privateFqdns\\\": [\\\"${PRIVATE_FQDNS//,/\\\",\\\"}\\\"]}\" \\\n        > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
+                                        "scriptContent": "      #!/bin/bash\n      set -e\n\n      echo \"Subscription ID: $SUBSCRIPTION_ID\"\n      echo \"Private Endpoint ID: $PRIVATE_ENDPOINT_ID\"\n      echo \"Service Type: $ENDPOINT_TYPE\"\n\n      # Quick subscription check\n      if [ -z \"$SUBSCRIPTION_ID\" ]; then\n        echo \"Error: Subscription ID is empty\"\n        exit 1\n      fi\n      az account set --subscription \"$SUBSCRIPTION_ID\" || {\n        echo \"Error: Failed to set subscription\"\n        exit 1\n      }\n\n      # Get Private IPs with timeout\n      PRIVATE_IPS=$(timeout 120s az network private-endpoint show \\\n        --ids \"$PRIVATE_ENDPOINT_ID\" \\\n        --query \"networkInterfaces[*].ipConfigurations[*].privateIPAddress\" \\\n        -o tsv 2>/dev/null | sort -u | tr '\\n' ',' | sed 's/,$//')\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"No IPs found, checking NICs (limited to first NIC)...\"\n        NIC_ID=$(timeout 60s az network private-endpoint show \\\n          --ids \"$PRIVATE_ENDPOINT_ID\" \\\n          --query \"networkInterfaces[0].id\" \\\n          -o tsv 2>/dev/null)\n        if [ -n \"$NIC_ID\" ]; then\n          PRIVATE_IPS=$(timeout 60s az network nic show \\\n            --ids \"$NIC_ID\" \\\n            --query \"ipConfigurations[?contains(name, 'privateEndpointIpConfig')].privateIpAddress\" \\\n            -o tsv 2>/dev/null | head -n 1)\n        fi\n      fi\n\n      # Validate IPs\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"Error: No valid private IPs found\"\n        exit 1\n      fi\n      VALID_IPS=\"\"\n      for IP in $(echo \"$PRIVATE_IPS\" | tr ',' '\\n'); do\n        if [[ \"$IP\" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then\n          VALID_IPS=\"$VALID_IPS,$IP\"\n        fi\n      done\n      PRIVATE_IPS=$(echo \"$VALID_IPS\" | sed 's/^,//' | tr '\\n' ',' | sed 's/,$//')\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"Error: No valid IPs after validation\"\n        exit 1\n      fi\n\n      # Get Azure environment specific domain suffixes\n      SQL_DOMAIN=$(az cloud show --query 'suffixes.sqlServerHostname' -o tsv)\n      # Remove leading dot if present\n      SQL_DOMAIN=${SQL_DOMAIN#.}\n      STORAGE_DOMAIN=$(az cloud show --query 'suffixes.storage' -o tsv)\n      # Remove leading dot if present\n      STORAGE_DOMAIN=${STORAGE_DOMAIN#.}\n      KV_DOMAIN=$(az cloud show --query 'suffixes.keyVaultDns' -o tsv)\n      # Remove leading dot if present\n      KV_DOMAIN=${KV_DOMAIN#.}\n      MONITOR_DOMAIN=\"privatelink.monitor.azure.com\" # TODO: Get this from Azure CLI when available\n\n      # Generate FQDNs\n      case \"$ENDPOINT_TYPE\" in\n        \"pai\") PRIVATE_FQDNS=\"pai-${DISCRIMINATOR}-${CLIENT_NAME}.${MONITOR_DOMAIN}\" ;;\n        \"sql\") PRIVATE_FQDNS=\"sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.${SQL_DOMAIN}\" ;;\n        \"stg\") PRIVATE_FQDNS=\"stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.${STORAGE_DOMAIN}\" ;;\n        \"pkv\") PRIVATE_FQDNS=\"pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.${KV_DOMAIN}\" ;;\n        \"law\") PRIVATE_FQDNS=\"law-${DISCRIMINATOR}-${CLIENT_NAME}.${MONITOR_DOMAIN}\" ;;\n        \"app\") echo \"Skipping App Service\"; \\\n              echo \"{\\\"privateIps\\\": [], \\\"privateFqdns\\\": []}\" > $AZ_SCRIPTS_OUTPUT_PATH; \\\n              exit 0 ;;\n        *) echo \"Error: Unsupported type $ENDPOINT_TYPE\"; exit 1 ;;\n      esac\n      \n      # Remove trailing dots from FQDNs if present\n      PRIVATE_FQDNS=${PRIVATE_FQDNS%.}\n\n      if [ -z \"$PRIVATE_FQDNS\" ]; then\n        echo \"Error: No FQDNs generated\"\n        exit 1\n      fi\n\n      # Output results\n      echo \"Private IPs: $PRIVATE_IPS\"\n      echo \"Private FQDNs: $PRIVATE_FQDNS\"\n      echo \"{\\\"privateIps\\\": [\\\"${PRIVATE_IPS//,/\\\",\\\"}\\\"], \\\"privateFqdns\\\": [\\\"${PRIVATE_FQDNS//,/\\\",\\\"}\\\"]}\" \\\n        > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
                                         "environmentVariables": [
                                           {
                                             "name": "SUBSCRIPTION_ID",
@@ -1025,12 +1065,12 @@
                                           },
                                           {
                                             "name": "STORAGE_SUFFIX",
-                                            "value": "core.windows.net"
+                                            "value": "[environment().suffixes.storage]"
                                           }
                                         ],
                                         "timeout": "[format('PT{0}M', parameters('timeout'))]",
-                                        "retentionInterval": "PT24H",
-                                        "cleanupPreference": "OnSuccess"
+                                        "retentionInterval": "PT6H",
+                                        "cleanupPreference": "Always"
                                       }
                                     }
                                   ],
@@ -1051,7 +1091,7 @@
                         }
                       },
                       "dependsOn": [
-                        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[copyIndex()])]"
+                        "[resourceId('Microsoft.Network/privateDnsZones', variables('cleanedZones')[copyIndex()].zoneName)]"
                       ]
                     }
                   ]
@@ -1087,6 +1127,9 @@
                   },
                   "enableDnsProxy": {
                     "value": true
+                  },
+                  "clientSubnets": {
+                    "value": "[variables('clientPrivateLinkSubnets')]"
                   }
                 },
                 "template": {
@@ -1096,7 +1139,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.33.93.31351",
-                      "templateHash": "12095878678278748264"
+                      "templateHash": "8012097176501039699"
                     }
                   },
                   "parameters": {
@@ -1142,6 +1185,20 @@
                         "description": "Enable DNS proxy on the Azure Firewall"
                       }
                     },
+                    "vmPrivateIp": {
+                      "type": "string",
+                      "defaultValue": "10.0.2.4",
+                      "metadata": {
+                        "description": "Private IP address of the VM for SSH access"
+                      }
+                    },
+                    "clientSubnets": {
+                      "type": "array",
+                      "defaultValue": [],
+                      "metadata": {
+                        "description": "Array of client subnet configurations for firewall rules"
+                      }
+                    },
                     "tags": {
                       "type": "object",
                       "defaultValue": {},
@@ -1149,6 +1206,30 @@
                         "description": "Tags to apply to the Azure Firewall"
                       }
                     }
+                  },
+                  "variables": {
+                    "copy": [
+                      {
+                        "name": "clientSubnetRules",
+                        "count": "[length(parameters('clientSubnets'))]",
+                        "input": {
+                          "ruleType": "NetworkRule",
+                          "name": "[format('AllowToClient{0}', copyIndex('clientSubnetRules'))]",
+                          "sourceAddresses": [
+                            "10.0.2.0/24"
+                          ],
+                          "destinationAddresses": [
+                            "[parameters('clientSubnets')[copyIndex('clientSubnetRules')]]"
+                          ],
+                          "ipProtocols": [
+                            "Any"
+                          ],
+                          "destinationPorts": [
+                            "*"
+                          ]
+                        }
+                      }
+                    ]
                   },
                   "resources": [
                     {
@@ -1177,6 +1258,183 @@
                       }
                     },
                     {
+                      "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
+                      "apiVersion": "2022-05-01",
+                      "name": "[format('{0}/{1}', format('{0}-policy', parameters('name')), 'DefaultNatRuleCollectionGroup')]",
+                      "properties": {
+                        "priority": 100,
+                        "ruleCollections": [
+                          {
+                            "ruleCollectionType": "FirewallPolicyNatRuleCollection",
+                            "name": "SSHAccess",
+                            "priority": 100,
+                            "action": {
+                              "type": "DNAT"
+                            },
+                            "rules": [
+                              {
+                                "ruleType": "NatRule",
+                                "name": "SSHToVM",
+                                "sourceAddresses": [
+                                  "*"
+                                ],
+                                "destinationAddresses": [
+                                  "[reference(resourceId('Microsoft.Network/publicIPAddresses', format('ip-{0}', parameters('name'))), '2021-05-01').ipAddress]"
+                                ],
+                                "destinationPorts": [
+                                  "22"
+                                ],
+                                "ipProtocols": [
+                                  "TCP"
+                                ],
+                                "translatedAddress": "[parameters('vmPrivateIp')]",
+                                "translatedPort": "22"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/firewallPolicies', format('{0}-policy', parameters('name')))]",
+                        "[resourceId('Microsoft.Network/publicIPAddresses', format('ip-{0}', parameters('name')))]"
+                      ]
+                    },
+                    {
+                      "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
+                      "apiVersion": "2022-05-01",
+                      "name": "[format('{0}/{1}', format('{0}-policy', parameters('name')), 'DefaultNetworkRuleCollectionGroup')]",
+                      "properties": {
+                        "priority": 200,
+                        "ruleCollections": [
+                          {
+                            "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                            "name": "AllowDNSAndARMAndSSH",
+                            "priority": 200,
+                            "action": {
+                              "type": "Allow"
+                            },
+                            "rules": [
+                              {
+                                "ruleType": "NetworkRule",
+                                "name": "AllowDNSResolver",
+                                "sourceAddresses": [
+                                  "10.0.2.0/24"
+                                ],
+                                "destinationAddresses": [
+                                  "168.63.129.16"
+                                ],
+                                "ipProtocols": [
+                                  "TCP",
+                                  "UDP"
+                                ],
+                                "destinationPorts": [
+                                  "53"
+                                ]
+                              },
+                              {
+                                "ruleType": "NetworkRule",
+                                "name": "AllowManagement",
+                                "sourceAddresses": [
+                                  "10.0.2.0/24"
+                                ],
+                                "destinationAddresses": [
+                                  "AzureResourceManager"
+                                ],
+                                "ipProtocols": [
+                                  "TCP"
+                                ],
+                                "destinationPorts": [
+                                  "443"
+                                ]
+                              },
+                              {
+                                "ruleType": "NetworkRule",
+                                "name": "AllowVMOutbound",
+                                "sourceAddresses": [
+                                  "10.0.2.0/24"
+                                ],
+                                "destinationAddresses": [
+                                  "*"
+                                ],
+                                "ipProtocols": [
+                                  "TCP"
+                                ],
+                                "destinationPorts": [
+                                  "*"
+                                ]
+                              },
+                              {
+                                "ruleType": "NetworkRule",
+                                "name": "AllowAllProtocolsToClients",
+                                "sourceAddresses": [
+                                  "10.0.2.0/24"
+                                ],
+                                "destinationAddresses": [
+                                  "10.0.0.0/8"
+                                ],
+                                "ipProtocols": [
+                                  "Any"
+                                ],
+                                "destinationPorts": [
+                                  "*"
+                                ]
+                              },
+                              {
+                                "ruleType": "NetworkRule",
+                                "name": "AllowVPNInbound",
+                                "sourceAddresses": [
+                                  "*"
+                                ],
+                                "destinationAddresses": [
+                                  "10.0.3.0/26"
+                                ],
+                                "ipProtocols": [
+                                  "UDP",
+                                  "TCP"
+                                ],
+                                "destinationPorts": [
+                                  "500",
+                                  "4500",
+                                  "1701",
+                                  "1723",
+                                  "443"
+                                ]
+                              },
+                              {
+                                "ruleType": "NetworkRule",
+                                "name": "AllowVPNClientTraffic",
+                                "sourceAddresses": [
+                                  "172.16.0.0/24"
+                                ],
+                                "destinationAddresses": [
+                                  "*"
+                                ],
+                                "ipProtocols": [
+                                  "Any"
+                                ],
+                                "destinationPorts": [
+                                  "*"
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                            "name": "ClientSpecificRules",
+                            "priority": 210,
+                            "action": {
+                              "type": "Allow"
+                            },
+                            "rules": "[variables('clientSubnetRules')]"
+                          }
+                        ]
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/firewallPolicies', format('{0}-policy', parameters('name')))]",
+                        "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', format('{0}-policy', parameters('name')), 'DefaultNatRuleCollectionGroup')]"
+                      ]
+                    },
+                    {
                       "type": "Microsoft.Network/azureFirewalls",
                       "apiVersion": "2022-05-01",
                       "name": "[parameters('name')]",
@@ -1197,70 +1455,13 @@
                         ],
                         "firewallPolicy": {
                           "id": "[resourceId('Microsoft.Network/firewallPolicies', format('{0}-policy', parameters('name')))]"
-                        },
-                        "networkRuleCollections": [
-                          {
-                            "name": "AllowDNSAndARMAndSSH",
-                            "properties": {
-                              "priority": 200,
-                              "action": {
-                                "type": "Allow"
-                              },
-                              "rules": [
-                                {
-                                  "name": "AllowDNSResolver",
-                                  "sourceAddresses": [
-                                    "10.0.2.0/24"
-                                  ],
-                                  "destinationAddresses": [
-                                    "168.63.129.16"
-                                  ],
-                                  "protocols": [
-                                    "TCP",
-                                    "UDP"
-                                  ],
-                                  "destinationPorts": [
-                                    "53"
-                                  ]
-                                },
-                                {
-                                  "name": "AllowManagement",
-                                  "sourceAddresses": [
-                                    "10.0.2.0/24"
-                                  ],
-                                  "destinationAddresses": [
-                                    "AzureResourceManager"
-                                  ],
-                                  "protocols": [
-                                    "TCP"
-                                  ],
-                                  "destinationPorts": [
-                                    "443"
-                                  ]
-                                },
-                                {
-                                  "name": "AllowSSHInbound",
-                                  "sourceAddresses": [
-                                    "*"
-                                  ],
-                                  "destinationAddresses": [
-                                    "172.174.206.65"
-                                  ],
-                                  "protocols": [
-                                    "TCP"
-                                  ],
-                                  "destinationPorts": [
-                                    "22"
-                                  ]
-                                }
-                              ]
-                            }
-                          }
-                        ]
+                        }
                       },
                       "tags": "[parameters('tags')]",
                       "dependsOn": [
                         "[resourceId('Microsoft.Network/firewallPolicies', format('{0}-policy', parameters('name')))]",
+                        "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', format('{0}-policy', parameters('name')), 'DefaultNatRuleCollectionGroup')]",
+                        "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', format('{0}-policy', parameters('name')), 'DefaultNetworkRuleCollectionGroup')]",
                         "[resourceId('Microsoft.Network/publicIPAddresses', format('ip-{0}', parameters('name')))]"
                       ]
                     }
@@ -1502,7 +1703,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.33.93.31351",
-              "templateHash": "13465300974824329842"
+              "templateHash": "13237793203783181283"
             }
           },
           "parameters": {
@@ -2037,7 +2238,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.33.93.31351",
-                      "templateHash": "5492126475009328451"
+                      "templateHash": "3042637355955528326"
                     }
                   },
                   "parameters": {
@@ -2166,7 +2367,7 @@
                     "defaultHostName": {
                       "type": "string",
                       "metadata": {
-                        "description": "The default URL of the App Service for public access before Private Link"
+                        "description": "The default URL of the App Service"
                       },
                       "value": "[reference(resourceId('Microsoft.Web/sites', format('app-{0}-{1}', parameters('discriminator'), parameters('clientName'))), '2022-03-01').defaultHostName]"
                     },
@@ -3291,7 +3492,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.33.93.31351",
-              "templateHash": "14599907349237042825"
+              "templateHash": "7685150335049268593"
             }
           },
           "parameters": {
@@ -3315,7 +3516,7 @@
                   "linkType": "app"
                 },
                 {
-                  "zoneName": "[format('privatelink{0}', environment().suffixes.sqlServerHostname)]",
+                  "zoneName": "[format('privatelink.{0}', environment().suffixes.sqlServerHostname)]",
                   "linkType": "sql"
                 },
                 {
@@ -3351,16 +3552,19 @@
           "variables": {
             "copy": [
               {
-                "name": "privateDnsZoneNames",
+                "name": "cleanedZones",
                 "count": "[length(parameters('privateDnsZonesMetadata'))]",
-                "input": "[parameters('privateDnsZonesMetadata')[copyIndex('privateDnsZoneNames')].zoneName]"
+                "input": {
+                  "zoneName": "[replace(parameters('privateDnsZonesMetadata')[copyIndex('cleanedZones')].zoneName, '..', '.')]",
+                  "linkType": "[parameters('privateDnsZonesMetadata')[copyIndex('cleanedZones')].linkType]"
+                }
               },
               {
                 "name": "dnsLinks",
-                "count": "[length(range(0, mul(length(parameters('clientNames')), length(variables('privateDnsZoneNames')))))]",
+                "count": "[length(range(0, mul(length(parameters('clientNames')), length(variables('cleanedZones')))))]",
                 "input": {
-                  "clientName": "[parameters('clientNames')[div(range(0, mul(length(parameters('clientNames')), length(variables('privateDnsZoneNames'))))[copyIndex('dnsLinks')], length(variables('privateDnsZoneNames')))]]",
-                  "zoneName": "[variables('privateDnsZoneNames')[mod(range(0, mul(length(parameters('clientNames')), length(variables('privateDnsZoneNames'))))[copyIndex('dnsLinks')], length(variables('privateDnsZoneNames')))]]"
+                  "clientName": "[parameters('clientNames')[div(range(0, mul(length(parameters('clientNames')), length(variables('cleanedZones'))))[copyIndex('dnsLinks')], length(variables('cleanedZones')))]]",
+                  "zone": "[variables('cleanedZones')[mod(range(0, mul(length(parameters('clientNames')), length(variables('cleanedZones'))))[copyIndex('dnsLinks')], length(variables('cleanedZones')))]]"
                 }
               }
             ]
@@ -3369,21 +3573,21 @@
             {
               "copy": {
                 "name": "privateDnsZones",
-                "count": "[length(variables('privateDnsZoneNames'))]"
+                "count": "[length(variables('cleanedZones'))]"
               },
               "type": "Microsoft.Network/privateDnsZones",
               "apiVersion": "2020-06-01",
-              "name": "[variables('privateDnsZoneNames')[copyIndex()]]",
+              "name": "[variables('cleanedZones')[copyIndex()].zoneName]",
               "location": "global"
             },
             {
               "copy": {
                 "name": "privateDnsLinksToHub",
-                "count": "[length(variables('privateDnsZoneNames'))]"
+                "count": "[length(variables('cleanedZones'))]"
               },
               "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
               "apiVersion": "2020-06-01",
-              "name": "[format('{0}/{1}', variables('privateDnsZoneNames')[copyIndex()], format('dnsl-{0}-central-{1}', parameters('discriminator'), variables('privateDnsZoneNames')[copyIndex()]))]",
+              "name": "[format('{0}/{1}', variables('cleanedZones')[copyIndex()].zoneName, format('dnsl-{0}-central-{1}', parameters('discriminator'), variables('cleanedZones')[copyIndex()].zoneName))]",
               "location": "global",
               "properties": {
                 "virtualNetwork": {
@@ -3392,8 +3596,8 @@
                 "registrationEnabled": false
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[copyIndex()])]",
-                "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[copyIndex()])]"
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('cleanedZones')[copyIndex()].zoneName)]",
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('cleanedZones')[copyIndex()].zoneName)]"
               ]
             },
             {
@@ -3403,7 +3607,7 @@
               },
               "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
               "apiVersion": "2020-06-01",
-              "name": "[format('{0}/{1}', variables('privateDnsZoneNames')[indexOf(variables('privateDnsZoneNames'), variables('dnsLinks')[copyIndex()].zoneName)], format('dnsl-{0}-{1}-{2}', parameters('discriminator'), variables('dnsLinks')[copyIndex()].clientName, variables('dnsLinks')[copyIndex()].zoneName))]",
+              "name": "[format('{0}/{1}', variables('cleanedZones')[indexOf(variables('cleanedZones'), variables('dnsLinks')[copyIndex()].zone)].zoneName, format('dnsl-{0}-{1}-{2}', parameters('discriminator'), variables('dnsLinks')[copyIndex()].clientName, variables('dnsLinks')[copyIndex()].zone.zoneName))]",
               "location": "global",
               "properties": {
                 "virtualNetwork": {
@@ -3412,19 +3616,19 @@
                 "registrationEnabled": false
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[indexOf(variables('privateDnsZoneNames'), variables('dnsLinks')[copyIndex()].zoneName)])]"
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('cleanedZones')[indexOf(variables('cleanedZones'), variables('dnsLinks')[copyIndex()].zone)].zoneName)]"
               ]
             },
             {
               "copy": {
                 "name": "createDnsRecords",
-                "count": "[length(variables('privateDnsZoneNames'))]",
+                "count": "[length(variables('cleanedZones'))]",
                 "mode": "serial",
                 "batchSize": 3
               },
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
-              "name": "[format('createDnsRecords-{0}-{1}', variables('privateDnsZoneNames')[copyIndex()], copyIndex())]",
+              "name": "[format('createDnsRecords-{0}-{1}', variables('cleanedZones')[copyIndex()].zoneName, copyIndex())]",
               "properties": {
                 "expressionEvaluationOptions": {
                   "scope": "inner"
@@ -3438,10 +3642,10 @@
                     "value": "[parameters('discriminator')]"
                   },
                   "privateDnsZoneName": {
-                    "value": "[variables('privateDnsZoneNames')[copyIndex()]]"
+                    "value": "[variables('cleanedZones')[copyIndex()].zoneName]"
                   },
                   "endpointType": {
-                    "value": "[parameters('privateDnsZonesMetadata')[copyIndex()].linkType]"
+                    "value": "[variables('cleanedZones')[copyIndex()].linkType]"
                   }
                 },
                 "template": {
@@ -3451,7 +3655,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.33.93.31351",
-                      "templateHash": "16478426447501899170"
+                      "templateHash": "10308993898065410561"
                     }
                   },
                   "parameters": {
@@ -3502,7 +3706,7 @@
                       },
                       "properties": {
                         "azCliVersion": "2.40.0",
-                        "scriptContent": "      #!/bin/bash\n      set -e\n\n      RESOURCE_GROUP=\"rg-central\"\n      DNS_ZONE_NAME=\"$privateDnsZoneName\"\n      SUBSCRIPTION_ID=$(az account show --query id -o tsv)\n\n      echo \"Subscription: $SUBSCRIPTION_ID\"\n      echo \"Resource Group: $RESOURCE_GROUP\"\n      echo \"DNS Zone: $DNS_ZONE_NAME\"\n      echo \"Endpoint Type: $ENDPOINT_TYPE\"\n      echo \"Clients: $clientNames\"\n\n      # Validate subscription context\n      if [ -z \"$SUBSCRIPTION_ID\" ]; then\n        echo \"Error: Subscription ID is empty\"\n        exit 1\n      fi\n      az account set --subscription \"$SUBSCRIPTION_ID\" || {\n        echo \"Error: Failed to set subscription $SUBSCRIPTION_ID\"\n        exit 1\n      }\n\n      # Handle App Service (skipped as AFD-managed)\n      if [ \"$ENDPOINT_TYPE\" = \"app\" ]; then\n        echo \"Skipping App Service DNS - managed by AFD\"\n        echo \"{\\\"privateDnsRecords\\\": \\\"Skipped App Service DNS records, managed by AFD\\\"}\" \\\n          > $AZ_SCRIPTS_OUTPUT_PATH\n        exit 0\n      fi\n\n      # Collect IPs and FQDNs from spoke deployments\n      ALL_IPS=\"\"\n      ALL_FQDNS=\"\"\n      for SPOKE in ${clientNames//,/ }; do\n        echo \"Checking rg-$SPOKE for $ENDPOINT_TYPE...\"\n        IPS=$(az deployment group show \\\n          -g \"rg-$SPOKE\" \\\n          -n \"extractPrivateIp-$SPOKE-$ENDPOINT_TYPE\" \\\n          --query \"properties.outputs.privateIps.value\" \\\n          -o tsv 2>/dev/null || echo \"\")\n        FQDNS=$(az deployment group show \\\n          -g \"rg-$SPOKE\" \\\n          -n \"extractPrivateIp-$SPOKE-$ENDPOINT_TYPE\" \\\n          --query \"properties.outputs.privateFqdns.value\" \\\n          -o tsv 2>/dev/null || echo \"\")\n        ALL_IPS=\"$ALL_IPS,$IPS\"\n        ALL_FQDNS=\"$ALL_FQDNS,$FQDNS\"\n      done\n\n      # Clean and validate collected data\n      IPS=$(echo \"$ALL_IPS\" | tr ',' '\\n' | sort -u | grep -v \"^$\" | tr '\\n' ' ')\n      FQDNS=$(echo \"$ALL_FQDNS\" | tr ',' '\\n' | sort -u | grep -v \"^$\" | tr '\\n' ' ')\n      echo \"Collected IPs: $IPS\"\n      echo \"Collected FQDNs: $FQDNS\"\n\n      if [ -z \"$IPS\" ] || [ -z \"$FQDNS\" ]; then\n        echo \"Error: No valid IPs or FQDNs for $ENDPOINT_TYPE\"\n        echo \"{\\\"privateDnsRecords\\\": \\\"Failed: No valid IPs or FQDNs for $ENDPOINT_TYPE\\\"}\" \\\n          > $AZ_SCRIPTS_OUTPUT_PATH\n        exit 1\n      fi\n\n      # Create DNS A records\n      for fqdn in $FQDNS; do\n        for ip in $IPS; do\n          echo \"Checking A record for $fqdn -> $ip...\"\n          if ! az network private-dns record-set a show \\\n            -g \"$RESOURCE_GROUP\" \\\n            -z \"$DNS_ZONE_NAME\" \\\n            -n \"$fqdn\" \\\n            --query \"aRecords[?ipv4Address=='$ip']\" \\\n            -o tsv 2>/dev/null; then\n            echo \"Creating A record for $fqdn -> $ip\"\n            az network private-dns record-set a create \\\n              -g \"$RESOURCE_GROUP\" \\\n              -z \"$DNS_ZONE_NAME\" \\\n              -n \"$fqdn\" \\\n              --ttl 3600 || {\n              echo \"Error: Failed to create A record for $fqdn\"\n              exit 1\n            }\n            az network private-dns record-set a add-record \\\n              -g \"$RESOURCE_GROUP\" \\\n              -z \"$DNS_ZONE_NAME\" \\\n              -n \"$fqdn\" \\\n              --ipv4-address \"$ip\" || {\n              echo \"Error: Failed to add IP $ip to $fqdn\"\n              exit 1\n            }\n          else\n            echo \"A record for $fqdn -> $ip exists, skipping\"\n          fi\n        done\n      done\n\n      echo \"Created DNS records for $ENDPOINT_TYPE\"\n      echo \"{\\\"privateDnsRecords\\\": \\\"Created A records for $ENDPOINT_TYPE\\\"}\" \\\n        > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
+                        "scriptContent": "      #!/bin/bash\n      set -e\n\n      RESOURCE_GROUP=\"rg-central\"\n      DNS_ZONE_NAME=\"$privateDnsZoneName\"\n      SUBSCRIPTION_ID=$(az account show --query id -o tsv)\n\n      echo \"Subscription: $SUBSCRIPTION_ID\"\n      echo \"Resource Group: $RESOURCE_GROUP\"\n      echo \"DNS Zone: $DNS_ZONE_NAME\"\n      echo \"Endpoint Type: $ENDPOINT_TYPE\"\n      echo \"Clients: $clientNames\"\n\n      # Validate subscription context\n      if [ -z \"$SUBSCRIPTION_ID\" ]; then\n        echo \"Error: Subscription ID is empty\"\n        exit 1\n      fi\n      az account set --subscription \"$SUBSCRIPTION_ID\" || {\n        echo \"Error: Failed to set subscription $SUBSCRIPTION_ID\"\n        exit 1\n      }\n\n      # Handle App Service (skipped as AFD-managed)\n      if [ \"$ENDPOINT_TYPE\" = \"app\" ]; then\n        echo \"Skipping App Service DNS - managed by AFD\"\n        echo \"{\\\"privateDnsRecords\\\": \\\"Skipped App Service DNS records, managed by AFD\\\"}\" \\\n          > $AZ_SCRIPTS_OUTPUT_PATH\n        exit 0\n      fi\n\n      # Collect IPs and FQDNs from spoke deployments\n      ALL_IPS=\"\"\n      ALL_FQDNS=\"\"\n      for SPOKE in ${clientNames//,/ }; do\n        echo \"Checking rg-$SPOKE for $ENDPOINT_TYPE...\"\n        # Search for any deployment that starts with extractIp and contains the endpoint type\n        EXTRACT_IP_DEPLOYMENT=$(az deployment group list \\\n          -g \"rg-$SPOKE\" \\\n          --query \"[?starts_with(name, 'extractIp-${SPOKE}-${ENDPOINT_TYPE}')].name\" \\\n          -o tsv 2>/dev/null | head -1)\n        \n        if [ -z \"$EXTRACT_IP_DEPLOYMENT\" ]; then\n          echo \"No extractor deployment found for $SPOKE-$ENDPOINT_TYPE\"\n          continue\n        fi\n          \n        echo \"Found deployment: $EXTRACT_IP_DEPLOYMENT\"\n        IPS=$(az deployment group show \\\n          -g \"rg-$SPOKE\" \\\n          -n \"$EXTRACT_IP_DEPLOYMENT\" \\\n          --query \"properties.outputs.privateIps.value\" \\\n          -o tsv 2>/dev/null || echo \"\")\n        FQDNS=$(az deployment group show \\\n          -g \"rg-$SPOKE\" \\\n          -n \"$EXTRACT_IP_DEPLOYMENT\" \\\n          --query \"properties.outputs.privateFqdns.value\" \\\n          -o tsv 2>/dev/null || echo \"\")\n        ALL_IPS=\"$ALL_IPS,$IPS\"\n        ALL_FQDNS=\"$ALL_FQDNS,$FQDNS\"\n      done\n\n      # Clean and validate collected data\n      IPS=$(echo \"$ALL_IPS\" | tr ',' '\\n' | sort -u | grep -v \"^$\" | tr '\\n' ' ')\n      FQDNS=$(echo \"$ALL_FQDNS\" | tr ',' '\\n' | sort -u | grep -v \"^$\" | tr '\\n' ' ')\n      echo \"Collected IPs: $IPS\"\n      echo \"Collected FQDNs: $FQDNS\"\n\n      if [ -z \"$IPS\" ] || [ -z \"$FQDNS\" ]; then\n        echo \"Error: No valid IPs or FQDNs for $ENDPOINT_TYPE\"\n        echo \"{\\\"privateDnsRecords\\\": \\\"Failed: No valid IPs or FQDNs for $ENDPOINT_TYPE\\\"}\" \\\n          > $AZ_SCRIPTS_OUTPUT_PATH\n        exit 1\n      fi\n\n      # Create DNS A records\n      for fqdn in $FQDNS; do\n        # Remove trailing dots from FQDN if present\n        fqdn=${fqdn%.}\n        for ip in $IPS; do\n          echo \"Checking A record for $fqdn -> $ip...\"\n          if ! az network private-dns record-set a show \\\n            -g \"$RESOURCE_GROUP\" \\\n            -z \"$DNS_ZONE_NAME\" \\\n            -n \"$fqdn\" \\\n            --query \"aRecords[?ipv4Address=='$ip']\" \\\n            -o tsv 2>/dev/null; then\n            echo \"Creating A record for $fqdn -> $ip\"\n            az network private-dns record-set a create \\\n              -g \"$RESOURCE_GROUP\" \\\n              -z \"$DNS_ZONE_NAME\" \\\n              -n \"$fqdn\" \\\n              --ttl 3600 || {\n              echo \"Error: Failed to create A record for $fqdn\"\n              exit 1\n            }\n            az network private-dns record-set a add-record \\\n              -g \"$RESOURCE_GROUP\" \\\n              -z \"$DNS_ZONE_NAME\" \\\n              -n \"$fqdn\" \\\n              --ipv4-address \"$ip\" || {\n              echo \"Error: Failed to add IP $ip to $fqdn\"\n              exit 1\n            }\n          else\n            echo \"A record for $fqdn -> $ip exists, skipping\"\n          fi\n        done\n      done\n\n      echo \"Created DNS records for $ENDPOINT_TYPE\"\n      echo \"{\\\"privateDnsRecords\\\": \\\"Created A records for $ENDPOINT_TYPE\\\"}\" \\\n        > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
                         "environmentVariables": [
                           {
                             "name": "clientNames",
@@ -3518,8 +3722,8 @@
                           }
                         ],
                         "timeout": "[format('PT{0}S', parameters('timeout'))]",
-                        "retentionInterval": "PT1H",
-                        "cleanupPreference": "OnSuccess"
+                        "retentionInterval": "PT6H",
+                        "cleanupPreference": "Always"
                       },
                       "dependsOn": [
                         "privateIpExtractor"
@@ -3533,7 +3737,7 @@
                       "condition": "[not(equals(parameters('endpointType'), 'app'))]",
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
-                      "name": "[format('extractPrivateIp-{0}-{1}', parameters('clientNames')[copyIndex()], parameters('endpointType'))]",
+                      "name": "[format('extractIp-{0}-{1}-{2}', parameters('clientNames')[copyIndex()], parameters('endpointType'), uniqueString(resourceGroup().id, deployment().name))]",
                       "resourceGroup": "[format('rg-{0}', parameters('clientNames')[copyIndex()])]",
                       "properties": {
                         "expressionEvaluationOptions": {
@@ -3562,7 +3766,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.33.93.31351",
-                              "templateHash": "11742486970552839752"
+                              "templateHash": "12147592847880662269"
                             }
                           },
                           "parameters": {
@@ -3626,7 +3830,7 @@
                               },
                               "properties": {
                                 "azCliVersion": "2.40.0",
-                                "scriptContent": "      #!/bin/bash\n      set -e\n\n      echo \"Subscription ID: $SUBSCRIPTION_ID\"\n      echo \"Private Endpoint ID: $PRIVATE_ENDPOINT_ID\"\n      echo \"Service Type: $ENDPOINT_TYPE\"\n\n      # Quick subscription check\n      if [ -z \"$SUBSCRIPTION_ID\" ]; then\n        echo \"Error: Subscription ID is empty\"\n        exit 1\n      fi\n      az account set --subscription \"$SUBSCRIPTION_ID\" || {\n        echo \"Error: Failed to set subscription\"\n        exit 1\n      }\n\n      # Get Private IPs with timeout\n      PRIVATE_IPS=$(timeout 120s az network private-endpoint show \\\n        --ids \"$PRIVATE_ENDPOINT_ID\" \\\n        --query \"networkInterfaces[*].ipConfigurations[*].privateIPAddress\" \\\n        -o tsv 2>/dev/null | sort -u | tr '\\n' ',' | sed 's/,$//')\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"No IPs found, checking NICs (limited to first NIC)...\"\n        NIC_ID=$(timeout 60s az network private-endpoint show \\\n          --ids \"$PRIVATE_ENDPOINT_ID\" \\\n          --query \"networkInterfaces[0].id\" \\\n          -o tsv 2>/dev/null)\n        if [ -n \"$NIC_ID\" ]; then\n          PRIVATE_IPS=$(timeout 60s az network nic show \\\n            --ids \"$NIC_ID\" \\\n            --query \"ipConfigurations[?contains(name, 'privateEndpointIpConfig')].privateIpAddress\" \\\n            -o tsv 2>/dev/null | head -n 1)\n        fi\n      fi\n\n      # Validate IPs\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"Error: No valid private IPs found\"\n        exit 1\n      fi\n      VALID_IPS=\"\"\n      for IP in $(echo \"$PRIVATE_IPS\" | tr ',' '\\n'); do\n        if [[ \"$IP\" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then\n          VALID_IPS=\"$VALID_IPS,$IP\"\n        fi\n      done\n      PRIVATE_IPS=$(echo \"$VALID_IPS\" | sed 's/^,//' | tr '\\n' ',' | sed 's/,$//')\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"Error: No valid IPs after validation\"\n        exit 1\n      fi\n\n      # Generate FQDNs\n      case \"$ENDPOINT_TYPE\" in\n        \"pai\") PRIVATE_FQDNS=\"pai-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com\" ;;\n        \"sql\") PRIVATE_FQDNS=\"sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.database.windows.net\" ;;\n        \"stg\") PRIVATE_FQDNS=\"stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.core.windows.net\" ;;\n        \"pkv\") PRIVATE_FQDNS=\"pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.vaultcore.azure.net\" ;;\n        \"law\") PRIVATE_FQDNS=\"law-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.monitor.azure.com\" ;;\n        \"app\") echo \"Skipping App Service\"; \\\n              echo \"{\\\"privateIps\\\": [], \\\"privateFqdns\\\": []}\" > $AZ_SCRIPTS_OUTPUT_PATH; \\\n              exit 0 ;;\n        *) echo \"Error: Unsupported type $ENDPOINT_TYPE\"; exit 1 ;;\n      esac\n\n      if [ -z \"$PRIVATE_FQDNS\" ]; then\n        echo \"Error: No FQDNs generated\"\n        exit 1\n      fi\n\n      # Output results\n      echo \"Private IPs: $PRIVATE_IPS\"\n      echo \"Private FQDNs: $PRIVATE_FQDNS\"\n      echo \"{\\\"privateIps\\\": [\\\"${PRIVATE_IPS//,/\\\",\\\"}\\\"], \\\"privateFqdns\\\": [\\\"${PRIVATE_FQDNS//,/\\\",\\\"}\\\"]}\" \\\n        > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
+                                "scriptContent": "      #!/bin/bash\n      set -e\n\n      echo \"Subscription ID: $SUBSCRIPTION_ID\"\n      echo \"Private Endpoint ID: $PRIVATE_ENDPOINT_ID\"\n      echo \"Service Type: $ENDPOINT_TYPE\"\n\n      # Quick subscription check\n      if [ -z \"$SUBSCRIPTION_ID\" ]; then\n        echo \"Error: Subscription ID is empty\"\n        exit 1\n      fi\n      az account set --subscription \"$SUBSCRIPTION_ID\" || {\n        echo \"Error: Failed to set subscription\"\n        exit 1\n      }\n\n      # Get Private IPs with timeout\n      PRIVATE_IPS=$(timeout 120s az network private-endpoint show \\\n        --ids \"$PRIVATE_ENDPOINT_ID\" \\\n        --query \"networkInterfaces[*].ipConfigurations[*].privateIPAddress\" \\\n        -o tsv 2>/dev/null | sort -u | tr '\\n' ',' | sed 's/,$//')\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"No IPs found, checking NICs (limited to first NIC)...\"\n        NIC_ID=$(timeout 60s az network private-endpoint show \\\n          --ids \"$PRIVATE_ENDPOINT_ID\" \\\n          --query \"networkInterfaces[0].id\" \\\n          -o tsv 2>/dev/null)\n        if [ -n \"$NIC_ID\" ]; then\n          PRIVATE_IPS=$(timeout 60s az network nic show \\\n            --ids \"$NIC_ID\" \\\n            --query \"ipConfigurations[?contains(name, 'privateEndpointIpConfig')].privateIpAddress\" \\\n            -o tsv 2>/dev/null | head -n 1)\n        fi\n      fi\n\n      # Validate IPs\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"Error: No valid private IPs found\"\n        exit 1\n      fi\n      VALID_IPS=\"\"\n      for IP in $(echo \"$PRIVATE_IPS\" | tr ',' '\\n'); do\n        if [[ \"$IP\" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then\n          VALID_IPS=\"$VALID_IPS,$IP\"\n        fi\n      done\n      PRIVATE_IPS=$(echo \"$VALID_IPS\" | sed 's/^,//' | tr '\\n' ',' | sed 's/,$//')\n      if [ -z \"$PRIVATE_IPS\" ]; then\n        echo \"Error: No valid IPs after validation\"\n        exit 1\n      fi\n\n      # Get Azure environment specific domain suffixes\n      SQL_DOMAIN=$(az cloud show --query 'suffixes.sqlServerHostname' -o tsv)\n      # Remove leading dot if present\n      SQL_DOMAIN=${SQL_DOMAIN#.}\n      STORAGE_DOMAIN=$(az cloud show --query 'suffixes.storage' -o tsv)\n      # Remove leading dot if present\n      STORAGE_DOMAIN=${STORAGE_DOMAIN#.}\n      KV_DOMAIN=$(az cloud show --query 'suffixes.keyVaultDns' -o tsv)\n      # Remove leading dot if present\n      KV_DOMAIN=${KV_DOMAIN#.}\n      MONITOR_DOMAIN=\"privatelink.monitor.azure.com\" # TODO: Get this from Azure CLI when available\n\n      # Generate FQDNs\n      case \"$ENDPOINT_TYPE\" in\n        \"pai\") PRIVATE_FQDNS=\"pai-${DISCRIMINATOR}-${CLIENT_NAME}.${MONITOR_DOMAIN}\" ;;\n        \"sql\") PRIVATE_FQDNS=\"sql-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.${SQL_DOMAIN}\" ;;\n        \"stg\") PRIVATE_FQDNS=\"stg${DISCRIMINATOR}${CLIENT_NAME}.privatelink.blob.${STORAGE_DOMAIN}\" ;;\n        \"pkv\") PRIVATE_FQDNS=\"pkv-${DISCRIMINATOR}-${CLIENT_NAME}.privatelink.${KV_DOMAIN}\" ;;\n        \"law\") PRIVATE_FQDNS=\"law-${DISCRIMINATOR}-${CLIENT_NAME}.${MONITOR_DOMAIN}\" ;;\n        \"app\") echo \"Skipping App Service\"; \\\n              echo \"{\\\"privateIps\\\": [], \\\"privateFqdns\\\": []}\" > $AZ_SCRIPTS_OUTPUT_PATH; \\\n              exit 0 ;;\n        *) echo \"Error: Unsupported type $ENDPOINT_TYPE\"; exit 1 ;;\n      esac\n      \n      # Remove trailing dots from FQDNs if present\n      PRIVATE_FQDNS=${PRIVATE_FQDNS%.}\n\n      if [ -z \"$PRIVATE_FQDNS\" ]; then\n        echo \"Error: No FQDNs generated\"\n        exit 1\n      fi\n\n      # Output results\n      echo \"Private IPs: $PRIVATE_IPS\"\n      echo \"Private FQDNs: $PRIVATE_FQDNS\"\n      echo \"{\\\"privateIps\\\": [\\\"${PRIVATE_IPS//,/\\\",\\\"}\\\"], \\\"privateFqdns\\\": [\\\"${PRIVATE_FQDNS//,/\\\",\\\"}\\\"]}\" \\\n        > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
                                 "environmentVariables": [
                                   {
                                     "name": "SUBSCRIPTION_ID",
@@ -3654,12 +3858,12 @@
                                   },
                                   {
                                     "name": "STORAGE_SUFFIX",
-                                    "value": "core.windows.net"
+                                    "value": "[environment().suffixes.storage]"
                                   }
                                 ],
                                 "timeout": "[format('PT{0}M', parameters('timeout'))]",
-                                "retentionInterval": "PT24H",
-                                "cleanupPreference": "OnSuccess"
+                                "retentionInterval": "PT6H",
+                                "cleanupPreference": "Always"
                               }
                             }
                           ],
@@ -3680,7 +3884,7 @@
                 }
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[copyIndex()])]"
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('cleanedZones')[copyIndex()].zoneName)]"
               ]
             }
           ]
@@ -3895,7 +4099,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.33.93.31351",
-              "templateHash": "3417702538424329485"
+              "templateHash": "6753740193263257025"
             }
           },
           "parameters": {
@@ -3940,7 +4144,7 @@
               },
               "properties": {
                 "azCliVersion": "2.40.0",
-                "scriptContent": "      #!/bin/bash\n      set -ex\n\n      RESOURCE_GROUP=\"$RESOURCE_GROUP\"\n      FRONTDOOR_NAME=\"$FRONTDOOR_NAME\"\n      DISCRIMINATOR=\"$DISCRIMINATOR\"\n      SUBSCRIPTION_ID=\"$SUBSCRIPTION_ID\"\n\n      IFS=',' read -r -a CLIENT_NAMES <<< \"$CLIENT_NAMES\"\n\n      az config set extension.use_dynamic_install=yes_without_prompt\n\n      # Create an array to store private link connection IDs\n      declare -a PRIVATE_LINK_IDS=()\n\n      for CLIENT in \"${CLIENT_NAMES[@]}\"; do\n        ORIGIN_GROUP=\"afd-og-${DISCRIMINATOR}-${CLIENT}\"\n        ORIGIN_NAME=\"afd-o-${DISCRIMINATOR}-${CLIENT}\"\n        ENDPOINT_NAME=\"afd-ep-${DISCRIMINATOR}-${CLIENT}\"\n        ROUTE_NAME=\"afd-rt-${DISCRIMINATOR}-${CLIENT}\"\n        ORIGIN_HOST=\"app-${DISCRIMINATOR}-${CLIENT}.privatelink.azurewebsites.net\"\n        CLIENT_RG=\"rg-${CLIENT}\"\n        APP_NAME=\"app-${DISCRIMINATOR}-${CLIENT}\"\n\n        # Create the origin group\n        echo \"Creating origin group: $ORIGIN_GROUP\"\n        az afd origin-group create \\\n          --resource-group \"$RESOURCE_GROUP\" \\\n          --profile-name \"$FRONTDOOR_NAME\" \\\n          --origin-group-name \"$ORIGIN_GROUP\" \\\n          --probe-request-type GET \\\n          --probe-protocol Https \\\n          --probe-interval-in-seconds 30 \\\n          --sample-size 4 \\\n          --successful-samples-required 3 \\\n          --probe-path \"/\" \\\n          --additional-latency-in-milliseconds 50\n\n        # Create the origin with private link\n        echo \"Creating origin with private link: $ORIGIN_NAME\"\n        OUTPUT=$(az afd origin create \\\n          --resource-group \"$RESOURCE_GROUP\" \\\n          --profile-name \"$FRONTDOOR_NAME\" \\\n          --origin-group-name \"$ORIGIN_GROUP\" \\\n          --origin-name \"$ORIGIN_NAME\" \\\n          --host-name \"$ORIGIN_HOST\" \\\n          --origin-host-header \"$ORIGIN_HOST\" \\\n          --http-port 80 \\\n          --https-port 443 \\\n          --priority 1 \\\n          --weight 1000 \\\n          --enabled-state Enabled \\\n          --enable-private-link true \\\n          --private-link-location \"eastus\" \\\n          --private-link-resource \"/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${CLIENT_RG}/providers/Microsoft.Web/sites/${APP_NAME}\" \\\n          --private-link-sub-resource-type \"sites\" \\\n          --private-link-request-message \"AFD App Service origin Private Link request.\" \\\n          --enforce-certificate-name-check true -o json)\n\n        # Extract private link connection ID\n        echo \"Extracting private link ID\"\n        PL_ID=$(echo \"$OUTPUT\" | jq -r '.privateLinkResource.id')\n        if [ -n \"$PL_ID\" ]; then\n          PRIVATE_LINK_IDS+=(\"$PL_ID\")\n          echo \"Added private link ID: $PL_ID\"\n        else\n          echo \"WARNING: Failed to extract private link ID for $CLIENT\"\n        fi\n\n        # Create the endpoint\n        echo \"Creating endpoint: $ENDPOINT_NAME\"\n        az afd endpoint create \\\n          --resource-group \"$RESOURCE_GROUP\" \\\n          --profile-name \"$FRONTDOOR_NAME\" \\\n          --endpoint-name \"$ENDPOINT_NAME\" \\\n          --enabled-state Enabled\n\n        # Create the route\n        echo \"Creating route: $ROUTE_NAME\"\n        az afd route create \\\n          --resource-group \"$RESOURCE_GROUP\" \\\n          --profile-name \"$FRONTDOOR_NAME\" \\\n          --endpoint-name \"$ENDPOINT_NAME\" \\\n          --route-name \"$ROUTE_NAME\" \\\n          --origin-group \"$ORIGIN_GROUP\" \\\n          --supported-protocols Https \\\n          --forwarding-protocol HttpsOnly \\\n          --link-to-default-domain Enabled \\\n          --https-redirect Disabled\n      done\n\n      # Return the private link IDs for the next script to use\n      echo \"Returning private link IDs\"\n      echo \"{\\\"privateLinks\\\": [$(printf '\"%s\",' \"${PRIVATE_LINK_IDS[@]}\" | sed 's/,$/')]}\" > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
+                "scriptContent": "      #!/bin/bash\n      set -ex\n\n      RESOURCE_GROUP=\"$RESOURCE_GROUP\"\n      FRONTDOOR_NAME=\"$FRONTDOOR_NAME\"\n      DISCRIMINATOR=\"$DISCRIMINATOR\"\n      SUBSCRIPTION_ID=\"$SUBSCRIPTION_ID\"\n\n      IFS=',' read -r -a CLIENT_NAMES <<< \"$CLIENT_NAMES\"\n\n      az config set extension.use_dynamic_install=yes_without_prompt\n\n      # Create an array to store private link connection IDs\n      declare -a PRIVATE_LINK_IDS=()\n\n      for CLIENT in \"${CLIENT_NAMES[@]}\"; do\n        ORIGIN_GROUP=\"afd-og-${DISCRIMINATOR}-${CLIENT}\"\n        ORIGIN_NAME=\"afd-o-${DISCRIMINATOR}-${CLIENT}\"\n        ENDPOINT_NAME=\"afd-ep-${DISCRIMINATOR}-${CLIENT}\"\n        ROUTE_NAME=\"afd-rt-${DISCRIMINATOR}-${CLIENT}\"\n        ORIGIN_HOST=\"app-${DISCRIMINATOR}-${CLIENT}.privatelink.azurewebsites.net\"\n        CLIENT_RG=\"rg-${CLIENT}\"\n        APP_NAME=\"app-${DISCRIMINATOR}-${CLIENT}\"\n\n        # Create the origin group\n        echo \"Creating origin group: $ORIGIN_GROUP\"\n        az afd origin-group create \\\n          --resource-group \"$RESOURCE_GROUP\" \\\n          --profile-name \"$FRONTDOOR_NAME\" \\\n          --origin-group-name \"$ORIGIN_GROUP\" \\\n          --probe-request-type GET \\\n          --probe-protocol Https \\\n          --probe-interval-in-seconds 30 \\\n          --sample-size 4 \\\n          --successful-samples-required 3 \\\n          --probe-path \"/\" \\\n          --additional-latency-in-milliseconds 50\n\n        # Create the origin with private link\n        echo \"Creating origin with private link: $ORIGIN_NAME\"\n        OUTPUT=$(az afd origin create \\\n          --resource-group \"$RESOURCE_GROUP\" \\\n          --profile-name \"$FRONTDOOR_NAME\" \\\n          --origin-group-name \"$ORIGIN_GROUP\" \\\n          --origin-name \"$ORIGIN_NAME\" \\\n          --host-name \"$ORIGIN_HOST\" \\\n          --origin-host-header \"$ORIGIN_HOST\" \\\n          --http-port 80 \\\n          --https-port 443 \\\n          --priority 1 \\\n          --weight 1000 \\\n          --enabled-state Enabled \\\n          --enable-private-link true \\\n          --private-link-location \"eastus\" \\\n          --private-link-resource \"/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${CLIENT_RG}/providers/Microsoft.Web/sites/${APP_NAME}\" \\\n          --private-link-sub-resource-type \"sites\" \\\n          --private-link-request-message \"AFD App Service origin Private Link request.\" \\\n          --enforce-certificate-name-check true -o json)\n\n        # Extract private link connection ID\n        echo \"Extracting private link ID\"\n        PL_ID=$(echo \"$OUTPUT\" | jq -r '.privateLinkResource.id')\n        if [ -n \"$PL_ID\" ]; then\n          PRIVATE_LINK_IDS+=(\"$PL_ID\")\n          echo \"Added private link ID: $PL_ID\"\n        else\n          echo \"WARNING: Failed to extract private link ID for $CLIENT\"\n        fi\n\n        # Create the endpoint\n        echo \"Creating endpoint: $ENDPOINT_NAME\"\n        az afd endpoint create \\\n          --resource-group \"$RESOURCE_GROUP\" \\\n          --profile-name \"$FRONTDOOR_NAME\" \\\n          --endpoint-name \"$ENDPOINT_NAME\" \\\n          --enabled-state Enabled\n\n        # Create the route\n        echo \"Creating route: $ROUTE_NAME\"\n        az afd route create \\\n          --resource-group \"$RESOURCE_GROUP\" \\\n          --profile-name \"$FRONTDOOR_NAME\" \\\n          --endpoint-name \"$ENDPOINT_NAME\" \\\n          --route-name \"$ROUTE_NAME\" \\\n          --origin-group \"$ORIGIN_GROUP\" \\\n          --supported-protocols Https \\\n          --forwarding-protocol HttpsOnly \\\n          --link-to-default-domain Enabled \\\n          --https-redirect Disabled\n      done\n\n      # Return the private link IDs for the next script to use\n      echo \"Returning private link IDs\"\n      if [ ${#PRIVATE_LINK_IDS[@]} -eq 0 ]; then\n        echo \"{\\\"privateLinks\\\": []}\" > $AZ_SCRIPTS_OUTPUT_PATH\n      else\n        # Ensure proper JSON formatting with jq\n        JSON_OUTPUT=$(printf '\"%s\",' \"${PRIVATE_LINK_IDS[@]}\" | sed 's/,$//')\n        echo \"{\\\"privateLinks\\\": [$JSON_OUTPUT]}\" | jq '.' > $AZ_SCRIPTS_OUTPUT_PATH\n      fi\n    ",
                 "environmentVariables": [
                   {
                     "name": "RESOURCE_GROUP",
@@ -3982,7 +4186,7 @@
               },
               "properties": {
                 "azCliVersion": "2.40.0",
-                "scriptContent": "      #!/bin/bash\n      set -ex\n      \n      # Parse input parameters\n      DISCRIMINATOR=\"$DISCRIMINATOR\"\n      SUBSCRIPTION_ID=\"$SUBSCRIPTION_ID\" \n      IFS=',' read -r -a CLIENT_NAMES <<< \"$CLIENT_NAMES\"\n      \n      # Parse private link IDs from previous script\n      PRIVATE_LINKS=$(echo $PRIVATE_LINKS | jq -r '.privateLinks[]')\n      \n      # Function to wait for private endpoint connection to be created\n      wait_for_pe_connection() {\n        local app_id=$1\n        local max_attempts=30\n        local attempt=0\n        local found=false\n        \n        echo \"Waiting for private endpoint connection to be created for $app_id...\"\n        \n        while [ $attempt -lt $max_attempts ] && [ \"$found\" = false ]; do\n          connections=$(az network private-endpoint-connection list --id \"$app_id\" -o json 2>/dev/null || echo \"[]\")\n          connection_count=$(echo \"$connections\" | jq 'length')\n          \n          if [ \"$connection_count\" -gt 0 ]; then\n            found=true\n            echo \"Private endpoint connection found for $app_id\"\n          else\n            echo \"Attempt $((attempt+1))/$max_attempts: No private endpoint connections found yet, waiting...\"\n            sleep 10\n            ((attempt++))\n          fi\n        done\n        \n        if [ \"$found\" = false ]; then\n          echo \"Failed to find private endpoint connection after $max_attempts attempts\"\n          return 1\n        fi\n        \n        return 0\n      }\n      \n      # Process each client\n      for CLIENT in \"${CLIENT_NAMES[@]}\"; do\n        # App properties\n        CLIENT_RG=\"rg-${CLIENT}\"\n        APP_NAME=\"app-${DISCRIMINATOR}-${CLIENT}\"\n        APP_ID=\"/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${CLIENT_RG}/providers/Microsoft.Web/sites/${APP_NAME}\"\n        \n        echo \"Processing app: $APP_NAME in resource group: $CLIENT_RG\"\n        \n        # Wait for private endpoint connection to be created\n        if wait_for_pe_connection \"$APP_ID\"; then\n          # Approve all pending connections for the app\n          echo \"Approving private endpoint connections for $APP_NAME...\"\n          \n          connections=$(az network private-endpoint-connection list --id \"$APP_ID\" -o json)\n          for connection in $(echo \"$connections\" | jq -c '.[]'); do\n            connection_id=$(echo \"$connection\" | jq -r '.id')\n            status=$(echo \"$connection\" | jq -r '.properties.privateLinkServiceConnectionState.status // \"Unknown\"')\n            \n            if [ \"$status\" != \"Approved\" ]; then\n              echo \"Approving connection: $connection_id\"\n              az network private-endpoint-connection approve \\\n                --id \"$connection_id\" \\\n                --description \"Approved by deployment script\" || echo \"Failed to approve connection: $connection_id\"\n            else\n              echo \"Connection already approved: $connection_id\"\n            fi\n          done\n          \n          # Wait for approval to take effect (10 seconds)\n          echo \"Waiting for approval to take effect...\"\n          sleep 10\n          \n          # Disable public network access for the app\n          echo \"Disabling public network access for $APP_NAME...\"\n          az webapp update \\\n            --resource-group \"$CLIENT_RG\" \\\n            --name \"$APP_NAME\" \\\n            --set publicNetworkAccess=Disabled || echo \"Failed to disable public network access for $APP_NAME\"\n        else\n          echo \"Skipping approval for $APP_NAME due to timeout waiting for private endpoint connection\"\n        fi\n      done\n      \n      echo \"Private link approval and public network access configuration completed\"\n      echo \"{\\\"status\\\": \\\"completed\\\"}\" > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
+                "scriptContent": "      #!/bin/bash\n      set -ex\n      \n      # Parse input parameters\n      DISCRIMINATOR=\"$DISCRIMINATOR\"\n      SUBSCRIPTION_ID=\"$SUBSCRIPTION_ID\" \n      IFS=',' read -r -a CLIENT_NAMES <<< \"$CLIENT_NAMES\"\n      \n      # Parse private link IDs from previous script\n      PRIVATE_LINKS_JSON=$PRIVATE_LINKS\n      PRIVATE_LINKS=$(echo \"$PRIVATE_LINKS_JSON\" | jq -r '.privateLinks[]' 2>/dev/null || echo \"\")\n      \n      # Function to wait for private endpoint connection to be created\n      wait_for_pe_connection() {\n        local app_id=$1\n        local max_attempts=30\n        local attempt=0\n        local found=false\n        \n        echo \"Waiting for private endpoint connection to be created for $app_id...\"\n        \n        while [ $attempt -lt $max_attempts ] && [ \"$found\" = false ]; do\n          connections=$(az network private-endpoint-connection list --id \"$app_id\" -o json 2>/dev/null || echo \"[]\")\n          connection_count=$(echo \"$connections\" | jq 'length')\n          \n          if [ \"$connection_count\" -gt 0 ]; then\n            found=true\n            echo \"Private endpoint connection found for $app_id\"\n          else\n            echo \"Attempt $((attempt+1))/$max_attempts: No private endpoint connections found yet, waiting...\"\n            sleep 10\n            ((attempt++))\n          fi\n        done\n        \n        if [ \"$found\" = false ]; then\n          echo \"Failed to find private endpoint connection after $max_attempts attempts\"\n          return 1\n        fi\n        \n        return 0\n      }\n      \n      # Process each client\n      for CLIENT in \"${CLIENT_NAMES[@]}\"; do\n        # App properties\n        CLIENT_RG=\"rg-${CLIENT}\"\n        APP_NAME=\"app-${DISCRIMINATOR}-${CLIENT}\"\n        APP_ID=\"/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${CLIENT_RG}/providers/Microsoft.Web/sites/${APP_NAME}\"\n        \n        echo \"Processing app: $APP_NAME in resource group: $CLIENT_RG\"\n        \n        # Wait for private endpoint connection to be created\n        if wait_for_pe_connection \"$APP_ID\"; then\n          # Approve all pending connections for the app\n          echo \"Approving private endpoint connections for $APP_NAME...\"\n          \n          # Safely retrieve private endpoint connections\n          connections=$(az network private-endpoint-connection list --id \"$APP_ID\" -o json 2>/dev/null || echo \"[]\")\n          # Safely process connections one by one\n          echo \"$connections\" | jq -c '.[]' | while read -r connection; do\n            connection_id=$(echo \"$connection\" | jq -r '.id')\n            status=$(echo \"$connection\" | jq -r '.properties.privateLinkServiceConnectionState.status // \"Unknown\"')\n            \n            if [ \"$status\" != \"Approved\" ]; then\n              echo \"Approving connection: $connection_id\"\n              az network private-endpoint-connection approve \\\n                --id \"$connection_id\" \\\n                --description \"Approved by deployment script\" || echo \"Failed to approve connection: $connection_id\"\n            else\n              echo \"Connection already approved: $connection_id\"\n            fi\n          done\n          \n          # Wait for approval to take effect (10 seconds)\n          echo \"Waiting for approval to take effect...\"\n          sleep 10\n          \n          # Disable public network access for the app\n          echo \"Disabling public network access for $APP_NAME...\"\n          az webapp update \\\n            --resource-group \"$CLIENT_RG\" \\\n            --name \"$APP_NAME\" \\\n            --set publicNetworkAccess=Disabled || echo \"Failed to disable public network access for $APP_NAME\"\n        else\n          echo \"Skipping approval for $APP_NAME due to timeout waiting for private endpoint connection\"\n        fi\n      done\n      \n      echo \"Private link approval and public network access configuration completed\"\n      echo \"{\\\"status\\\": \\\"completed\\\"}\" > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
                 "environmentVariables": [
                   {
                     "name": "DISCRIMINATOR",
@@ -4015,6 +4219,654 @@
       "dependsOn": [
         "peering"
       ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "deployment-scripts-identity",
+      "resourceGroup": "rg-central",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "uami-deployment-scripts"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.33.93.31351",
+              "templateHash": "2694307901126858253"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the User Assigned Managed Identity"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region where the identity will be deployed"
+              }
+            }
+          },
+          "variables": {
+            "roleId": "b24988ac-6180-42a0-ab88-20f7382dd24c"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2023-01-31",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]"
+            }
+          ],
+          "outputs": {
+            "roleDefinitionId": {
+              "type": "string",
+              "value": "[variables('roleId')]"
+            },
+            "uamiId": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the UAMI"
+              },
+              "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name'))]"
+            },
+            "principalId": {
+              "type": "string",
+              "metadata": {
+                "description": "The principal ID of the UAMI"
+              },
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), '2023-01-31').principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/deployments', 'centralResourceGroup')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "central-key-vault-deployment",
+      "resourceGroup": "rg-central",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "central"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "discriminator": {
+            "value": "[parameters('discriminator')]"
+          },
+          "accessPolicies": {
+            "value": [
+              {
+                "objectId": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'deployment-scripts-identity'), '2022-09-01').outputs.principalId.value]",
+                "tenantId": "[subscription().tenantId]",
+                "permissions": {
+                  "certificates": [
+                    "get",
+                    "list",
+                    "create",
+                    "import",
+                    "delete",
+                    "purge",
+                    "recover",
+                    "backup",
+                    "restore"
+                  ],
+                  "secrets": [
+                    "get",
+                    "list",
+                    "set",
+                    "delete",
+                    "purge",
+                    "recover",
+                    "backup",
+                    "restore"
+                  ],
+                  "keys": [
+                    "get",
+                    "list",
+                    "create",
+                    "delete",
+                    "purge",
+                    "recover",
+                    "backup",
+                    "restore"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.33.93.31351",
+              "templateHash": "6782796047405560385"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "defaultValue": "central",
+              "metadata": {
+                "description": "Name for the Key Vault"
+              }
+            },
+            "discriminator": {
+              "type": "string",
+              "metadata": {
+                "description": "Unique qualifier for resource naming to avoid conflicts"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Azure region for the Key Vault"
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "standard",
+              "allowedValues": [
+                "standard",
+                "premium"
+              ],
+              "metadata": {
+                "description": "SKU of the Key Vault, defaults to standard"
+              }
+            },
+            "accessPolicies": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Access policies defining permissions for administrators or applications"
+              }
+            },
+            "softDeleteRetentionDays": {
+              "type": "int",
+              "defaultValue": 7,
+              "metadata": {
+                "description": "Soft delete retention period in days, minimum 7 days for recovery"
+              }
+            },
+            "enablePurgeProtection": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Flag to enable purge protection for enhanced security"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags for organizing and billing the Key Vault instance"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2022-07-01",
+              "name": "[format('kv-{0}-{1}', parameters('discriminator'), parameters('name'))]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": {
+                  "family": "A",
+                  "name": "[parameters('skuName')]"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": "[parameters('accessPolicies')]",
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": "[parameters('softDeleteRetentionDays')]",
+                "enablePurgeProtection": "[parameters('enablePurgeProtection')]",
+                "publicNetworkAccess": "Enabled"
+              },
+              "tags": "[parameters('tags')]"
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the deployed Key Vault instance"
+              },
+              "value": "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('discriminator'), parameters('name')))]"
+            },
+            "vaultUri": {
+              "type": "string",
+              "metadata": {
+                "description": "The URI of the Key Vault for accessing secrets, keys, and certificates"
+              },
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', format('kv-{0}-{1}', parameters('discriminator'), parameters('name'))), '2022-07-01').vaultUri]"
+            },
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Key Vault instance for reference"
+              },
+              "value": "[format('kv-{0}-{1}', parameters('discriminator'), parameters('name'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/deployments', 'centralResourceGroup')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'deployment-scripts-identity')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "kv-role-assignment",
+      "resourceGroup": "rg-central",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "principalId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'deployment-scripts-identity'), '2022-09-01').outputs.principalId.value]"
+          },
+          "keyVaultName": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'central-key-vault-deployment'), '2022-09-01').outputs.name.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.33.93.31351",
+              "templateHash": "15939867994849881512"
+            }
+          },
+          "parameters": {
+            "principalId": {
+              "type": "string",
+              "metadata": {
+                "description": "The Principal ID to assign the Key Vault Administrator role to"
+              }
+            },
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "The Key Vault name"
+              }
+            }
+          },
+          "variables": {
+            "kvRoleName": "[guid(resourceGroup().id, parameters('principalId'), 'Key Vault Administrator')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.KeyVault/vaults/{0}', parameters('keyVaultName'))]",
+              "name": "[variables('kvRoleName')]",
+              "properties": {
+                "principalId": "[parameters('principalId')]",
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '00482a5a-887f-4fb3-b363-3b7fe8e74483')]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "metadata": {
+                "description": "Role Assignment resource ID"
+              },
+              "value": "[extensionResourceId(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), 'Microsoft.Authorization/roleAssignments', variables('kvRoleName'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'central-key-vault-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'deployment-scripts-identity')]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployVpn')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "vpnGatewayDeployment",
+      "resourceGroup": "rg-central",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "discriminator": {
+            "value": "[parameters('discriminator')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "addressPool": {
+            "value": "172.16.0.0/24"
+          },
+          "authType": {
+            "value": "Certificate"
+          },
+          "rootCertData": {
+            "value": "[parameters('vpnRootCertData')]"
+          },
+          "rootCertName": {
+            "value": "[parameters('vpnRootCertName')]"
+          },
+          "uamiId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'deployment-scripts-identity'), '2022-09-01').outputs.uamiId.value]"
+          },
+          "keyVaultName": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'central-key-vault-deployment'), '2022-09-01').outputs.name.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.33.93.31351",
+              "templateHash": "17034311284441229716"
+            }
+          },
+          "parameters": {
+            "discriminator": {
+              "type": "string",
+              "metadata": {
+                "description": "Unique qualifier for resource naming to avoid conflicts"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region where resources will be deployed"
+              }
+            },
+            "addressPool": {
+              "type": "string",
+              "metadata": {
+                "description": "Address pool for VPN clients, e.g. 172.16.0.0/24"
+              }
+            },
+            "authType": {
+              "type": "string",
+              "defaultValue": "Certificate",
+              "allowedValues": [
+                "Certificate",
+                "AAD"
+              ],
+              "metadata": {
+                "description": "Authentication type for VPN clients"
+              }
+            },
+            "rootCertName": {
+              "type": "string",
+              "defaultValue": "P2SRootCert",
+              "metadata": {
+                "description": "Root certificate name for VPN authentication"
+              }
+            },
+            "aadTenantId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Azure AD tenant ID for AAD authentication"
+              }
+            },
+            "aadAudience": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Azure AD audience for AAD authentication"
+              }
+            },
+            "aadIssuer": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Azure AD issuer for AAD authentication"
+              }
+            },
+            "rootCertData": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Root certificate data for VPN authentication (base64-encoded .cer). If not provided, a certificate will be generated automatically."
+              }
+            },
+            "uamiId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Resource ID of the User Assigned Managed Identity to use for deployment scripts"
+              }
+            },
+            "keyVaultName": {
+              "type": "string",
+              "defaultValue": "[format('kv-vpn-{0}', parameters('discriminator'))]",
+              "metadata": {
+                "description": "Name of the Key Vault where VPN certificates will be stored"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2023-05-01",
+              "name": "[format('{0}/{1}', format('vnet-{0}-central', parameters('discriminator')), 'GatewaySubnet')]",
+              "properties": {
+                "addressPrefix": "10.0.3.0/26"
+              }
+            },
+            {
+              "condition": "[and(equals(parameters('rootCertData'), ''), not(equals(parameters('uamiId'), '')))]",
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2020-10-01",
+              "name": "vpn-cert-generator",
+              "location": "[parameters('location')]",
+              "kind": "AzureCLI",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('uamiId'))]": {}
+                }
+              },
+              "properties": {
+                "azCliVersion": "2.40.0",
+                "retentionInterval": "P1D",
+                "scriptContent": "      #!/bin/bash\n      set -e\n\n      KEY_VAULT_NAME=$1\n      CERT_NAME=$2\n      CLIENT_CERT_NAME=\"P2SClientCert\"\n      PASSWORD=\"Password1!\"\n      \n      echo \"Starting VPN certificate generation script\"\n      echo \"Key Vault: $KEY_VAULT_NAME\"\n      echo \"Certificate Name: $CERT_NAME\"\n      \n      # Add access policy for the managed identity\n      echo \"Setting access policy for deployment script identity...\"\n      OBJ_ID=$(az account show --query id -o tsv)\n      echo \"Current identity object ID: $OBJ_ID\"\n      \n      # First check if we can access the Key Vault\n      if ! az keyvault show --name \"$KEY_VAULT_NAME\" &>/dev/null; then\n        echo \"Error: Cannot access Key Vault $KEY_VAULT_NAME\"\n        exit 1\n      fi\n      \n      # Get key vault resource ID for role assignment\n      KV_ID=$(az keyvault show --name \"$KEY_VAULT_NAME\" --query id -o tsv)\n      echo \"Key Vault ID: $KV_ID\"\n      \n      # Assign Key Vault Administrator role to managed identity\n      echo \"Assigning Key Vault Administrator role...\"\n      az role assignment create \\\n        --assignee \"$OBJ_ID\" \\\n        --role \"Key Vault Administrator\" \\\n        --scope \"$KV_ID\" || echo \"Role assignment failed, trying access policy\"\n        \n      # Using set-policy for access permissions to ensure we have them\n      echo \"Setting access policy directly...\"\n      az keyvault set-policy --name \"$KEY_VAULT_NAME\" \\\n        --object-id \"$OBJ_ID\" \\\n        --certificate-permissions get list create import delete purge recover backup restore \\\n        --secret-permissions get list set delete purge recover backup restore \\\n        --key-permissions get list create delete purge recover backup restore\n      \n      # Wait a bit to ensure policy propagation\n      echo \"Waiting for access policy to propagate...\"\n      sleep 15\n      \n      # Check if we can actually access the key vault\n      echo \"Testing key vault access...\"\n      if ! az keyvault secret list --vault-name \"$KEY_VAULT_NAME\" &>/dev/null; then\n        echo \"WARNING: Still can't list secrets. Trying to force permissions...\"\n        # Try another policy setting - sometimes this works better\n        az keyvault update --name \"$KEY_VAULT_NAME\" --enable-rbac-authorization false\n        sleep 5\n        az keyvault set-policy --name \"$KEY_VAULT_NAME\" \\\n          --object-id \"$OBJ_ID\" \\\n          --certificate-permissions all \\\n          --secret-permissions all \\\n          --key-permissions all\n        sleep 15\n      fi\n        \n      # Create temporary directory\n      echo \"Creating temporary directory...\"\n      CERT_DIR=$(mktemp -d)\n      cd \"$CERT_DIR\"\n      \n      # Generate root certificate\n      echo \"Generating root certificate...\"\n      openssl req -x509 -new -nodes -sha256 -days 3650 \\\n        -subj \"/CN=$CERT_NAME\" \\\n        -keyout \"$CERT_NAME.key\" \\\n        -out \"$CERT_NAME.crt\"\n      \n      # Convert root cert to DER for Azure VPN\n      echo \"Converting to DER format...\"\n      openssl x509 -in \"$CERT_NAME.crt\" -outform der -out \"$CERT_NAME.cer\"\n      \n      # Base64 encode for Azure\n      echo \"Base64 encoding certificate...\"\n      ROOT_CERT_DATA=$(base64 -i \"$CERT_NAME.cer\" | tr -d '\\n')\n      \n      # Generate client key for VPN connections\n      echo \"Generating client certificate...\"\n      openssl genrsa -out \"$CLIENT_CERT_NAME.key\" 2048\n      \n      # Generate client certificate request\n      echo \"Creating CSR...\"\n      openssl req -new -key \"$CLIENT_CERT_NAME.key\" -out \"$CLIENT_CERT_NAME.csr\" -subj \"/CN=$CLIENT_CERT_NAME\"\n      \n      # Sign client certificate with root certificate\n      echo \"Signing client certificate...\"\n      openssl x509 -req -in \"$CLIENT_CERT_NAME.csr\" \\\n        -CA \"$CERT_NAME.crt\" \\\n        -CAkey \"$CERT_NAME.key\" \\\n        -CAcreateserial \\\n        -out \"$CLIENT_CERT_NAME.crt\" \\\n        -days 365 -sha256\n      \n      # Create PKCS#12 file for client import\n      echo \"Creating PKCS#12 bundle...\"\n      openssl pkcs12 -export \\\n        -in \"$CLIENT_CERT_NAME.crt\" \\\n        -inkey \"$CLIENT_CERT_NAME.key\" \\\n        -certfile \"$CERT_NAME.crt\" \\\n        -out \"$CLIENT_CERT_NAME.pfx\" \\\n        -password pass:$PASSWORD\n      \n      # Store certificates in Key Vault\n      echo \"Storing certificates in Key Vault...\"\n      \n      # Check if certificates already exist\n      ROOT_CERT_EXISTS=false\n      CLIENT_CERT_EXISTS=false\n      CLIENT_SECRET_EXISTS=false\n      \n      if az keyvault certificate show --vault-name \"$KEY_VAULT_NAME\" --name \"$CERT_NAME\" &>/dev/null; then\n        echo \"Root certificate already exists in Key Vault\"\n        ROOT_CERT_EXISTS=true\n      fi\n      \n      if az keyvault certificate show --vault-name \"$KEY_VAULT_NAME\" --name \"$CLIENT_CERT_NAME\" &>/dev/null; then\n        echo \"Client certificate already exists in Key Vault\"\n        CLIENT_CERT_EXISTS=true\n      fi\n      \n      if az keyvault secret show --vault-name \"$KEY_VAULT_NAME\" --name \"$CLIENT_CERT_NAME-pfx\" &>/dev/null; then\n        echo \"Client certificate PFX already exists in Key Vault\"\n        CLIENT_SECRET_EXISTS=true\n      fi\n      \n      # If both client certificate and pfx secret exist, we can skip import\n      if $ROOT_CERT_EXISTS && $CLIENT_CERT_EXISTS && $CLIENT_SECRET_EXISTS; then\n        echo \"All certificates and secrets already exist in Key Vault. Using existing ones.\"\n      else\n        echo \"Some certificate assets need to be imported to Key Vault.\"\n        echo \"Importing root certificate...\"\n        # Create PFX for Key Vault root cert\n        openssl pkcs12 -export -out \"$CERT_NAME.pfx\" -inkey \"$CERT_NAME.key\" -in \"$CERT_NAME.crt\" -passout pass:$PASSWORD\n        \n        # Import root certificate to Key Vault - with a retry mechanism\n        echo \"Importing root certificate...\"\n        for i in {1..3}; do\n          if az keyvault certificate import --vault-name \"$KEY_VAULT_NAME\" \\\n            --name \"$CERT_NAME\" \\\n            --file \"$CERT_NAME.pfx\" \\\n            --password \"$PASSWORD\"; then\n            echo \"Root certificate imported successfully\"\n            break\n          else\n            echo \"Retry $i: Failed to import root certificate\"\n            # Wait a few seconds before retrying\n            sleep 5\n            # Get permissions again just to be sure\n            az keyvault set-policy --name \"$KEY_VAULT_NAME\" \\\n              --object-id \"$OBJ_ID\" \\\n              --certificate-permissions get list create import delete purge recover backup restore \\\n              --secret-permissions get list set delete purge recover backup restore \\\n              --key-permissions get list create delete purge recover backup restore\n          fi\n          \n          if [ $i -eq 3 ]; then\n            echo \"Warning: Could not import root certificate after $i attempts\"\n          fi\n        done\n        \n        # Verify current key vault permissions\n        echo \"Verifying current permissions...\"\n        # Current permission status\n        echo \"Testing access to secrets in Key Vault...\"\n        SECRET_ACCESS=$(az keyvault secret list --vault-name \"$KEY_VAULT_NAME\" &>/dev/null && echo \"true\" || echo \"false\")\n        echo \"Secret access: $SECRET_ACCESS\"\n\n        # Store the certificates using a different approach\n        # Save to local files first so we can try multiple approaches\n        echo \"Preparing files for key vault storage...\"\n        \n        # Save the root certificate public data to a file\n        echo \"$ROOT_CERT_DATA\" > rootcert_public.txt\n        \n        # Save client pfx base64 data to a file\n        CLIENT_PFX_B64=$(base64 -i \"$CLIENT_CERT_NAME.pfx\" | tr -d '\\n')\n        echo \"$CLIENT_PFX_B64\" > client_pfx.txt\n        \n        # Save password to a file\n        echo \"$PASSWORD\" > client_password.txt\n        \n        # Try direct Azure CLI approach first\n        echo \"Attempting to store secrets using az CLI...\"\n        \n        # Simplified for clarity - try with basic parameters first\n        echo \"Storing root certificate public data...\"\n        az keyvault secret set --vault-name \"$KEY_VAULT_NAME\" \\\n          --name \"$CERT_NAME-public\" \\\n          --value \"$ROOT_CERT_DATA\" \\\n          --output none || echo \"Failed to store root certificate public data (direct)\"\n        \n        echo \"Importing client certificate...\"\n        az keyvault certificate import --vault-name \"$KEY_VAULT_NAME\" \\\n          --name \"$CLIENT_CERT_NAME\" \\\n          --file \"$CLIENT_CERT_NAME.pfx\" \\\n          --password \"$PASSWORD\" \\\n          --output none || echo \"Failed to import client certificate (direct)\"\n        \n        echo \"Storing client PFX as secret...\"\n        az keyvault secret set --vault-name \"$KEY_VAULT_NAME\" \\\n          --name \"$CLIENT_CERT_NAME-pfx\" \\\n          --value \"$CLIENT_PFX_B64\" \\\n          --output none || echo \"Failed to store client certificate PFX (direct)\"\n        \n        echo \"Storing client certificate password...\"\n        az keyvault secret set --vault-name \"$KEY_VAULT_NAME\" \\\n          --name \"$CLIENT_CERT_NAME-password\" \\\n          --value \"$PASSWORD\" \\\n          --output none || echo \"Failed to store client certificate password (direct)\"\n        \n        # Fallback approach - try with REST API through Azure CLI\n        echo \"Checking what we were able to store...\"\n        az keyvault secret list --vault-name \"$KEY_VAULT_NAME\" --query \"[].name\" -o tsv || echo \"Cannot list secrets\"\n        az keyvault certificate list --vault-name \"$KEY_VAULT_NAME\" --query \"[].name\" -o tsv || echo \"Cannot list certificates\"\n        \n        # Print conclusion\n        echo \"Certificate and secret storage operation completed\"\n        echo \"Note: If secrets were not stored, you'll need to manually add them from the generated files\"\n        echo \"Root certificate has been successfully imported and is accessible by the VPN Gateway\"\n      fi\n      \n      # List created objects in Key Vault\n      echo \"Listing certificates in Key Vault:\"\n      az keyvault certificate list --vault-name \"$KEY_VAULT_NAME\" --query \"[].id\" -o tsv || echo \"Failed to list certificates\"\n      \n      echo \"Listing secrets in Key Vault:\"\n      az keyvault secret list --vault-name \"$KEY_VAULT_NAME\" --query \"[].id\" -o tsv || echo \"Failed to list secrets\"\n      \n      # Save certificate data to a log file for debugging\n      echo \"Root cert data length: ${#ROOT_CERT_DATA}\" \n      echo \"Client PFX data length: ${#CLIENT_PFX_B64}\"\n      \n      # Make sure to output both certificates regardless of whether they were newly created or already existed\n      if [ -z \"$CLIENT_PFX_B64\" ] || [ \"$CLIENT_PFX_B64\" == \"null\" ]; then\n        echo \"Client PFX data is empty, trying to retrieve from Key Vault...\"\n        # Try to retrieve existing client certificate from Key Vault\n        RETRIEVED_CLIENT_PFX=\"\"\n        if az keyvault secret show --vault-name \"$KEY_VAULT_NAME\" --name \"$CLIENT_CERT_NAME-pfx\" --query \"value\" -o tsv &>/dev/null; then\n          RETRIEVED_CLIENT_PFX=$(az keyvault secret show --vault-name \"$KEY_VAULT_NAME\" --name \"$CLIENT_CERT_NAME-pfx\" --query \"value\" -o tsv)\n          echo \"Retrieved client certificate from Key Vault\"\n        fi\n        \n        # Use the retrieved value if it exists, otherwise use the generated value\n        if [ -n \"$RETRIEVED_CLIENT_PFX\" ]; then\n          CLIENT_PFX_B64=\"$RETRIEVED_CLIENT_PFX\"\n        fi\n      fi\n      \n      # Final verification and output\n      echo \"Final Root cert data length: ${#ROOT_CERT_DATA}\" \n      echo \"Final Client PFX data length: ${#CLIENT_PFX_B64}\"\n      \n      # Output the certificate data as script output\n      echo \"{ \\\"certificateData\\\": \\\"$ROOT_CERT_DATA\\\", \\\"clientCertificatePfx\\\": \\\"$CLIENT_PFX_B64\\\", \\\"clientCertificatePassword\\\": \\\"$PASSWORD\\\" }\" > $AZ_SCRIPTS_OUTPUT_PATH\n      \n      echo \"Certificate generation completed successfully\"\n      \n      # Clean up\n      cd - >/dev/null\n      rm -rf \"$CERT_DIR\"\n    ",
+                "arguments": "[format('{0} {1}', parameters('keyVaultName'), parameters('rootCertName'))]",
+                "timeout": "PT15M",
+                "cleanupPreference": "Always"
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-05-01",
+              "name": "[format('vpngw-pip-{0}', parameters('discriminator'))]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                  "domainNameLabel": "[format('vpn-{0}', toLower(parameters('discriminator')))]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/vpnServerConfigurations",
+              "apiVersion": "2023-05-01",
+              "name": "[format('vpnconfig-{0}', parameters('discriminator'))]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "vpnProtocols": [
+                  "IkeV2",
+                  "OpenVPN"
+                ],
+                "vpnAuthenticationTypes": [
+                  "[parameters('authType')]"
+                ],
+                "vpnClientRootCertificates": "[if(equals(parameters('authType'), 'Certificate'), createArray(createObject('name', parameters('rootCertName'), 'publicCertData', if(not(empty(parameters('rootCertData'))), parameters('rootCertData'), if(not(equals(parameters('uamiId'), '')), reference(resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator'), '2020-10-01').outputs.certificateData, '')))), createArray())]",
+                "aadAuthenticationParameters": "[if(equals(parameters('authType'), 'AAD'), createObject('aadTenant', parameters('aadTenantId'), 'aadAudience', parameters('aadAudience'), 'aadIssuer', parameters('aadIssuer')), null())]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworkGateways",
+              "apiVersion": "2023-05-01",
+              "name": "[format('vpngw-{0}', parameters('discriminator'))]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "gatewayType": "Vpn",
+                "vpnType": "RouteBased",
+                "vpnGatewayGeneration": "Generation2",
+                "sku": {
+                  "name": "VpnGw2",
+                  "tier": "VpnGw2"
+                },
+                "enableBgp": false,
+                "activeActive": false,
+                "ipConfigurations": [
+                  {
+                    "name": "default",
+                    "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "subnet": {
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('vnet-{0}-central', parameters('discriminator')), 'GatewaySubnet')]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('vpngw-pip-{0}', parameters('discriminator')))]"
+                      }
+                    }
+                  }
+                ],
+                "vpnClientConfiguration": {
+                  "vpnClientAddressPool": {
+                    "addressPrefixes": [
+                      "[parameters('addressPool')]"
+                    ]
+                  },
+                  "vpnClientProtocols": [
+                    "IkeV2",
+                    "OpenVPN"
+                  ],
+                  "vpnAuthenticationTypes": [
+                    "[parameters('authType')]"
+                  ],
+                  "vpnClientRootCertificates": "[if(equals(parameters('authType'), 'Certificate'), createArray(createObject('name', parameters('rootCertName'), 'properties', createObject('publicCertData', if(not(empty(parameters('rootCertData'))), parameters('rootCertData'), if(not(equals(parameters('uamiId'), '')), reference(resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator'), '2020-10-01').outputs.certificateData, ''))))), createArray())]",
+                  "aadTenant": "[if(equals(parameters('authType'), 'AAD'), parameters('aadTenantId'), null())]",
+                  "aadAudience": "[if(equals(parameters('authType'), 'AAD'), parameters('aadAudience'), null())]",
+                  "aadIssuer": "[if(equals(parameters('authType'), 'AAD'), parameters('aadIssuer'), null())]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('vnet-{0}-central', parameters('discriminator')), 'GatewaySubnet')]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', format('vpngw-pip-{0}', parameters('discriminator')))]",
+                "[resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator')]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vpnGatewayId": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the VPN gateway"
+              },
+              "value": "[resourceId('Microsoft.Network/virtualNetworkGateways', format('vpngw-{0}', parameters('discriminator')))]"
+            },
+            "vpnPublicIpAddress": {
+              "type": "string",
+              "metadata": {
+                "description": "The public IP address of the VPN gateway"
+              },
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', format('vpngw-pip-{0}', parameters('discriminator'))), '2023-05-01').ipAddress]"
+            },
+            "vpnClientPackageUrl": {
+              "type": "string",
+              "metadata": {
+                "description": "The VPN client configuration package URL"
+              },
+              "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworkGateways/{2}/vpnclientpackage', subscription().subscriptionId, resourceGroup().name, format('vpngw-{0}', parameters('discriminator')))]"
+            },
+            "certificateData": {
+              "type": "string",
+              "metadata": {
+                "description": "The certificate data used for VPN authentication"
+              },
+              "value": "[if(not(empty(parameters('rootCertData'))), parameters('rootCertData'), if(not(equals(parameters('uamiId'), '')), reference(resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator'), '2020-10-01').outputs.certificateData, ''))]"
+            },
+            "clientCertificatePfx": {
+              "type": "string",
+              "metadata": {
+                "description": "The client certificate PFX data if available from the deployment script"
+              },
+              "value": "[if(and(not(equals(parameters('uamiId'), '')), equals(parameters('rootCertData'), '')), if(contains(reference(resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator'), '2020-10-01').outputs, 'clientCertificatePfx'), reference(resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator'), '2020-10-01').outputs.clientCertificatePfx, ''), '')]"
+            },
+            "clientCertificatePassword": {
+              "type": "string",
+              "metadata": {
+                "description": "The client certificate password if available from the deployment script"
+              },
+              "value": "[if(and(not(equals(parameters('uamiId'), '')), equals(parameters('rootCertData'), '')), if(contains(reference(resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator'), '2020-10-01').outputs, 'clientCertificatePassword'), reference(resourceId('Microsoft.Resources/deploymentScripts', 'vpn-cert-generator'), '2020-10-01').outputs.clientCertificatePassword, ''), '')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'central-key-vault-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'centralResourcesDeployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'deployment-scripts-identity')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'frontDoorConfiguration')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'kv-role-assignment')]"
+      ]
     }
-  ]
+  ],
+  "outputs": {
+    "vpnCertificateInfo": {
+      "type": "object",
+      "metadata": {
+        "description": "VPN certificate information for client connection"
+      },
+      "value": "[if(parameters('deployVpn'), createObject('vpnClientPackageUrl', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'vpnGatewayDeployment'), '2022-09-01').outputs.vpnClientPackageUrl.value, 'clientCertificatePfx', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'vpnGatewayDeployment'), '2022-09-01').outputs.clientCertificatePfx.value, 'clientCertificatePassword', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-central'), 'Microsoft.Resources/deployments', 'vpnGatewayDeployment'), '2022-09-01').outputs.clientCertificatePassword.value), createObject())]"
+    }
+  }
 }
