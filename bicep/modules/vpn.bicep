@@ -440,7 +440,7 @@ resource vpnServerConfig 'Microsoft.Network/vpnServerConfigurations@2023-05-01' 
   }
 }
 
-// Create the VPN Gateway
+// Virtual Network Gateway for P2S VPN
 resource vpnGateway 'Microsoft.Network/virtualNetworkGateways@2023-05-01' = {
   name: 'vpngw-${discriminator}'
   location: location

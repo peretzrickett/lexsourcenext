@@ -84,23 +84,6 @@ echo "Template validated successfully!"
 echo "Deploying Azure resources with $TEMPLATE_FILE and $PARAMS_FILE..."
 echo "Deployment name: $DEPLOYMENT_NAME"
 
-# Ask user if they want to run a what-if simulation first
-read -p "Run a what-if deployment simulation first? (y/n): " RUN_WHATIF
-if [[ $RUN_WHATIF == "y" || $RUN_WHATIF == "Y" ]]; then
-    echo "Running what-if analysis..."
-    az deployment sub what-if \
-        --location eastus \
-        --template-file "$TEMPLATE_FILE" \
-        --parameters "@$PARAMS_FILE"
-    
-    # Confirm deployment
-    read -p "Proceed with actual deployment? (y/n): " PROCEED
-    if [[ $PROCEED != "y" && $PROCEED != "Y" ]]; then
-        echo "Deployment cancelled by user."
-        exit 0
-    fi
-fi
-
 # Set maximum deployment time (in seconds)
 TIMEOUT=1800  # 30 minutes
 

@@ -1,0 +1,15 @@
+WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486,17) : Warning use-safe-access: Use the safe access (.?) operator. [https://aka.ms/bicep/linter/use-safe-access]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(150,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'deploymentScriptsIdentity'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(163,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'centralKeyVault'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(186,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'centralKeyVault'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/modules/frontDoorConfigure.bicep(360,28) : Warning no-hardcoded-env-urls: Environment URLs should not be hardcoded. Use the environment() function to ensure compatibility across clouds. Found this disallowed host: "management.azure.com" [https://aka.ms/bicep/linter/no-hardcoded-env-urls]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/modules/frontDoorConfigure.bicep(380,28) : Warning no-hardcoded-env-urls: Environment URLs should not be hardcoded. Use the environment() function to ensure compatibility across clouds. Found this disallowed host: "management.azure.com" [https://aka.ms/bicep/linter/no-hardcoded-env-urls]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/modules/frontDoorConfigure.bicep(415,28) : Warning no-hardcoded-env-urls: Environment URLs should not be hardcoded. Use the environment() function to ensure compatibility across clouds. Found this disallowed host: "management.azure.com" [https://aka.ms/bicep/linter/no-hardcoded-env-urls]
+
+ERROR: {"code": "MultipleErrorsOccurred", "message": "Multiple error occurred: Conflict,Conflict. Please see details."}
+
+Inner Errors: 
+{"code": "DeploymentActive", "message": "Unable to edit or replace deployment 'centralResourcesDeployment': previous deployment from '3/7/2025 3:49:56 PM' is still active (expiration time is '3/14/2025 3:48:57 PM'). Please see https://aka.ms/arm-deploy-resources for usage details."}
+
+Inner Errors: 
+{"code": "DeploymentActive", "message": "Unable to edit or replace deployment 'privateDnsZone': previous deployment from '3/7/2025 3:49:46 PM' is still active (expiration time is '3/14/2025 3:49:08 PM'). Please see https://aka.ms/arm-deploy-resources for usage details."}

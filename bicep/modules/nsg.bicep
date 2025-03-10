@@ -141,6 +141,34 @@ resource privatelinkNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
           description: 'Allow traffic from Azure Front Door service tag'
         }
       }
+      {
+        name: 'Allow-Central-VNet'
+        properties: {
+          priority: 130
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: '10.0.0.0/16'  // Central VNet
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+          description: 'Allow all traffic from the Central VNet'
+        }
+      }
+      {
+        name: 'Allow-AFD-Frontend'
+        properties: {
+          priority: 140
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: 'AzureFrontDoor.Frontend'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+          description: 'Allow traffic from Azure Front Door Frontend service tag'
+        }
+      }
       // No Deny-All rule to allow proper functioning in a Hub-Spoke model
     ]
   }

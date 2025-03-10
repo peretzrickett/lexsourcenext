@@ -20,20 +20,21 @@ This document provides an overview of shell scripts used for managing Azure depl
 | `bicep-join.sh` | Combine bicep files | `./bicep-join.sh` | - Concatenates all bicep files into `all_bicep.txt`<br>- Useful for searching across templates |
 | `inspect-rgs.sh` | List resource groups | `./inspect-rgs.sh` | - Shows all related resource groups<br>- Provides overview of deployed infrastructure |
 | `zone-cleanup.sh` | Remove DNS zones | `./zone-cleanup.sh` | - Specifically targets private DNS zones<br>- Removes DNS zone links first, then zones<br>- Useful for DNS-related deployment issues |
+| `reset-cloud.sh` | Reset with preservation | `./reset-cloud.sh` | - Preserves key components (vaults, storage, identities)<br>- Removes other resources<br>- Useful for partial redeployment |
 
-## VPN-Specific Scripts
+## VPN-Related Scripts
 
 | Script | Purpose | Usage | Description |
 |--------|---------|-------|-------------|
 | `deploy-vpn.sh` | VPN-only deployment | `./deploy-vpn.sh` | - Deploys only VPN-related resources<br>- Creates certificates and managed identity<br>- Can be used independently from main infrastructure |
+| `generate-vpn-certs.sh` | Create VPN certificates | `./generate-vpn-certs.sh` | - Generates certificates for VPN authentication<br>- Stores them in Azure Key Vault<br>- Used by the VPN gateway for client authentication |
+| `get-vpn-cert.sh` | Retrieve VPN certificates | `./get-vpn-cert.sh` | - Downloads VPN client certificates from Key Vault<br>- Formats certificates for VPN client configuration<br>- Useful when setting up new VPN clients |
 
-## Specialized/Optional Scripts
+## Validation Scripts
 
 | Script | Purpose | Usage | Description |
 |--------|---------|-------|-------------|
-| `test-frontdoor.sh` | Test Front Door | `./test-frontdoor.sh` | - Focuses on Front Door resources<br>- Troubleshoots Front Door configuration |
-| `validate-deployment.sh` | Validate deployment | `./validate-deployment.sh` | - Checks DNS configurations<br>- Validates Front Door routing<br>- Tests network connectivity |
-| `reset-cloud.sh` | Reset with preservation | `./reset-cloud.sh` | - Preserves key components (vaults, storage, identities)<br>- Removes other resources<br>- Useful for partial redeployment |
+| `validate-deployment.sh` | Validate deployment | `./validate-deployment.sh` | - Checks DNS configurations<br>- Validates Front Door routing<br>- Tests network connectivity<br>- Verifies private endpoint connections<br>- Confirms firewall rules are working |
 
 ## Best Practices
 
@@ -52,3 +53,13 @@ This document provides an overview of shell scripts used for managing Azure depl
 4. For complete reset, use `clean-all.sh` (be cautious as this removes all resources)
 
 5. When making DNS zone changes, use `zone-cleanup.sh` to remove DNS zones before redeployment
+
+## Troubleshooting Common Issues
+
+| Issue | Resolution Script | Notes |
+|-------|-----------------|-------|
+| Failed deployments | `clean-deployments.sh` | Clears stuck deployment operations |
+| DNS resolution problems | `zone-cleanup.sh` | Removes and allows recreation of private DNS zones |
+| VPN client connectivity | `get-vpn-cert.sh` | Ensures proper VPN certificate configuration |
+| Network connectivity | `validate-deployment.sh` | Tests connectivity across the environment |
+| Complete environment reset | `clean-all.sh` | Use with caution - completely removes all deployed resources |

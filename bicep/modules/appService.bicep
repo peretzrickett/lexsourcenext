@@ -37,21 +37,19 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
       scmIpSecurityRestrictionsUseMain: true // Apply IP restrictions to the SCM (Kudu) site, matching main site
       alwaysOn: true // Keep the app always running for better performance
       minTlsVersion: '1.2' // Enforce TLS 1.2 minimum for security
-      appSettings: [
-        for setting in appSettings: {
-          name: setting.name
-          value: setting.value
-        }
-        // Add settings for VNet integration
-        {
-          name: 'WEBSITE_VNET_ROUTE_ALL'
-          value: '1'
-        }
-        {
-          name: 'WEBSITE_DNS_SERVER'
-          value: '168.63.129.16' // Azure DNS server for private DNS resolution
-        }
-      ]
+      appSettings: concat(
+        appSettings, 
+        [
+          {
+            name: 'WEBSITE_VNET_ROUTE_ALL'
+            value: '1'
+          }
+          {
+            name: 'WEBSITE_DNS_SERVER'
+            value: '168.63.129.16' // Azure DNS server for private DNS resolution
+          }
+        ]
+      )
       ipSecurityRestrictions: [
         {
           name: 'AllowVNetSubnet'

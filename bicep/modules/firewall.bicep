@@ -51,6 +51,9 @@ resource firewallPolicy 'Microsoft.Network/firewallPolicies@2022-05-01' = {
       enableProxy: enableDnsProxy
     }
     threatIntelMode: threatIntelMode
+    sku: {
+      tier: 'Premium'
+    }
   }
 }
 
@@ -168,11 +171,43 @@ resource networkRuleCollectionGroup 'Microsoft.Network/firewallPolicies/ruleColl
           }
           {
             ruleType: 'NetworkRule'
-            name: 'AllowFrontDoorServiceTag'
-            sourceAddresses: ['AzureFrontDoor.Backend'] // Azure Front Door service tag
-            destinationAddresses: ['10.0.0.0/8'] // All resources in your network
+            name: 'AllowVMToFrontDoor'
+            sourceAddresses: ['10.0.2.0/24'] // VM subnet
+            destinationAddresses: ['10.8.0.0/16'] // Azure Front Door private endpoints
             ipProtocols: ['Any'] // All protocols
             destinationPorts: ['*'] // All ports
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowToFrontDoorServiceTag'
+            sourceAddresses: ['10.0.2.0/24'] // VM subnet
+            destinationAddresses: ['AzureFrontDoor.Backend'] // AFD service tag
+            ipProtocols: ['Any'] // All protocols
+            destinationPorts: ['*'] // All ports
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowFirewallToFrontDoorServiceTag'
+            sourceAddresses: ['10.0.1.0/24'] // Firewall subnet
+            destinationAddresses: ['AzureFrontDoor.Backend'] // AFD service tag
+            ipProtocols: ['Any'] // All protocols
+            destinationPorts: ['*'] // All ports
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowFrontDoorToPrivateEndpoint'
+            sourceAddresses: ['10.8.0.0/16'] // Azure Front Door managed private endpoints 
+            destinationAddresses: ['10.0.0.0/8'] // Include all private endpoint IPs in your network
+            ipProtocols: ['Any'] // All protocols
+            destinationPorts: ['*'] // All ports
+          }
+          {
+            ruleType: 'NetworkRule'
+            name: 'AllowFrontDoorToPrivateIPsHttp'
+            sourceAddresses: ['10.8.0.0/16'] // Azure Front Door managed private endpoints
+            destinationAddresses: ['10.0.0.0/8'] // All private IP addresses in the 10.0.0.0/8 range
+            destinationPorts: ['80', '443']
+            ipProtocols: ['TCP']
           }
         ]
       }
@@ -242,6 +277,44 @@ resource applicationRuleCollectionGroup 'Microsoft.Network/firewallPolicies/rule
               '*.privatelink.azurewebsites.net'
             ]
           }
+          {
+            ruleType: 'ApplicationRule'
+            name: 'AllowVMToWebApps'
+            sourceAddresses: ['10.0.2.0/24'] // VM subnet
+            protocols: [
+              {
+                protocolType: 'Http'
+                port: 80
+              }
+              {
+                protocolType: 'Https'
+                port: 443
+              }
+            ]
+            targetFqdns: [
+              '*.azurewebsites.net'
+              '*.privatelink.azurewebsites.net'
+              '*.azurefd.net'
+            ]
+          }
+          {
+            ruleType: 'ApplicationRule'
+            name: 'AllowFrontDoorToPrivateEndpoints'
+            sourceAddresses: ['10.8.0.0/16'] // Azure Front Door managed private endpoints
+            protocols: [
+              {
+                protocolType: 'Http'
+                port: 80
+              }
+              {
+                protocolType: 'Https'
+                port: 443
+              }
+            ]
+            targetFqdns: [
+              '*.privatelink.azurewebsites.net'
+            ]
+          }
         ]
       }
     ]
@@ -270,6 +343,10 @@ resource firewall 'Microsoft.Network/azureFirewalls@2022-05-01' = {
     ]
     firewallPolicy: {
       id: firewallPolicy.id
+    }
+    sku: {
+      name: 'AZFW_VNet'
+      tier: 'Premium'
     }
   }
   tags: tags

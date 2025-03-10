@@ -112,6 +112,15 @@ resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
           nextHopType: 'VirtualNetworkGateway'
         }
       }
+      {
+        // Specific route for Azure Front Door private link subnet
+        name: 'RouteToFrontDoorPrivateLink'
+        properties: {
+          addressPrefix: '10.8.0.0/16'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: firewall.outputs.privateIp
+        }
+      }
     ]
   }
 }

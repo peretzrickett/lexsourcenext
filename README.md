@@ -6,8 +6,9 @@ This project uses Azure Bicep to deploy a secure, multi-tenant infrastructure wi
 
 - [**SCRIPTS.md**](/bicep/SCRIPTS.md) - Detailed guide to all shell scripts
 - [**Bicep Modules**](#core-modules-and-execution-order) - Overview of bicep modules and execution order
-- [**VPN.md**](/bicep/VPN.md) - VPN setup and client configuration *(coming soon)*
-- [**DEPLOYMENT.md**](/bicep/DEPLOYMENT.md) - Detailed deployment walkthrough *(coming soon)*
+- [**VPN.md**](/bicep/VPN.md) - VPN setup and client configuration
+- [**DEPLOYMENT.md**](/bicep/DEPLOYMENT.md) - Detailed deployment walkthrough
+- [**CONNECTIVITY.md**](/bicep/CONNECTIVITY.md) - Front Door to Private Endpoint connectivity guide
 
 ## Architecture Overview
 
@@ -15,9 +16,20 @@ The architecture follows these key principles:
 
 - **Hub and Spoke Network**: Central hub VNet with connected client VNets
 - **Private Endpoints**: All Azure services use private endpoints
-- **Front Door**: Azure Front Door for global traffic management
+- **Front Door**: Azure Front Door for global traffic management with private link service
 - **Private DNS Integration**: Centralized private DNS zones for all services
 - **VPN Connectivity**: Point-to-site VPN for secure access
+- **Centralized Firewall**: Azure Firewall for network traffic inspection and control
+
+### Connectivity Architecture
+
+The solution implements a secure connectivity model:
+
+- **Inbound Traffic**: All client traffic enters through Azure Front Door, which connects to app services via private endpoints
+- **Network Security**: NSGs control traffic flow between network segments
+- **Traffic Routing**: All traffic from VMs routes through the central Azure Firewall
+- **Private Link**: Azure services are accessed through private endpoints with private DNS resolution
+- **VPN Access**: Point-to-site VPN provides secure admin access to the environment
 
 ## Directory Structure
 
@@ -29,6 +41,10 @@ The architecture follows these key principles:
 │   ├── centralResources.bicep # Hub resources deployment
 │   ├── clientResources.bicep  # Spoke resources for each client
 │   ├── vpn.bicep              # VPN gateway configuration
+│   ├── firewall.bicep         # Azure Firewall with rules
+│   ├── frontDoor.bicep        # Front Door profile
+│   ├── frontDoorConfigure.bicep # Front Door private link configuration
+│   ├── nsg.bicep              # Network Security Groups
 │   └── ...                    # Other resource-specific modules
 ├── *.sh                       # Deployment and utility scripts
 └── SCRIPTS.md                 # Documentation for shell scripts
@@ -73,11 +89,9 @@ The architecture follows these key principles:
 
 4. **Verify**: Run `./validate-deployment.sh` after deployment completes
 
-For detailed deployment instructions, see the [Deployment Guide](#detailed-deployment) below.
-
 ---
 
-## <a name="detailed-deployment"></a>Detailed Deployment Guide
+## Detailed Deployment Guide
 
 ### Prerequisites
 
@@ -161,10 +175,35 @@ For detailed deployment instructions, see the [Deployment Guide](#detailed-deplo
 |-------|----------|
 | Failed deployments | Run `./clean-deployments.sh` to clear deployments, then retry |
 | DNS resolution issues | Run `./zone-cleanup.sh` to remove DNS zones, then redeploy |
-| Front Door routing problems | Use `./test-frontdoor.sh` to test Front Door configuration |
+| Front Door routing problems | Check the Front Door configuration and verify private endpoint connections |
 | Stuck deployments | Run `./cancel-all-deployments.sh` to cancel all running deployments |
 | Complete reset | Run `./clean-all.sh` to remove all deployed resources (use with caution) |
-| VPN issues | Try the standalone VPN deployment: `./deploy-vpn.sh` |
+| VPN issues | Check certificates in Key Vault and VPN configuration |
+
+## Key Configurations
+
+### Azure Front Door to Private Endpoints
+
+The architecture includes specific configurations to ensure Azure Front Door can properly communicate with private endpoints:
+
+1. **Route Table Configuration**:
+   - Specific route for Azure Front Door private link subnet (10.8.0.0/16)
+   - Traffic is routed through the Azure Firewall
+
+2. **Firewall Rules**:
+   - Allow traffic from VM subnet to Azure Front Door private endpoints
+   - Allow traffic from VM subnet to AzureFrontDoor.Backend service tag
+   - Allow traffic from Firewall subnet to AzureFrontDoor.Backend service tag
+   - Allow HTTPS traffic to *.azurefd.net domains
+
+3. **NSG Rules**:
+   - Allow traffic from Azure Front Door to private link subnets
+   - Allow traffic from both AzureFrontDoor.Frontend and AzureFrontDoor.Backend service tags
+   - Allow traffic from Central VNet to all subnets
+
+4. **Private Link Approval**:
+   - Automated private link approval process
+   - Configuration on both App Service and Front Door sides
 
 ## Contributing
 
@@ -189,6 +228,7 @@ When extending this deployment:
 - VPN provides secure access to resources
 - Private DNS prevents public resolution
 - Front Door WAF can be enabled for protection
+- Azure Firewall inspects and controls all traffic
 
 ## Maintenance
 
@@ -206,3 +246,4 @@ Regular maintenance tasks:
 - [Private Link Documentation](https://learn.microsoft.com/en-us/azure/private-link/)
 - [Azure VPN Gateway](https://learn.microsoft.com/en-us/azure/vpn-gateway/)
 - [Azure Front Door](https://learn.microsoft.com/en-us/azure/frontdoor/)
+- [Azure Firewall](https://learn.microsoft.com/en-us/azure/firewall/)
