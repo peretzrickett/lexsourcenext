@@ -13,16 +13,16 @@ param discriminator string = 'lexsb'
 module centralResourceGroup 'modules/resourceGroup.bicep' = {
   name: 'centralResourceGroup'
   params: {
-    name: 'rg-central'
+    name: 'rg-${discriminator}-central'
     location: location
   }
 }
 
 // Create resource groups for each client at the subscription level
 module clientResourceGroups 'modules/resourceGroup.bicep' = [for client in clients: {
-  name: 'rg-${client.name}'
+  name: 'rg-${discriminator}-${client.name}'
   params: {
-    name: 'rg-${client.name}'
+    name: 'rg-${discriminator}-${client.name}'
     location: location
   }
 }]
@@ -30,7 +30,7 @@ module clientResourceGroups 'modules/resourceGroup.bicep' = [for client in clien
 // Deploy central resources
 module centralResources 'modules/centralResources.bicep' = {
   name: 'centralResourcesDeployment'
-  scope: resourceGroup('rg-central')
+  scope: resourceGroup('rg-${discriminator}-central')
   params: {
     location: location
     discriminator: discriminator
@@ -45,7 +45,7 @@ module centralResources 'modules/centralResources.bicep' = {
 // Deploy client-specific resources
 module clientResources 'modules/clientResources.bicep' = [for client in clients: {
   name: '${client.name}-resources'
-  scope: resourceGroup('rg-${client.name}')
+  scope: resourceGroup('rg-${discriminator}-${client.name}')
   params: {
     clientName: client.name
     location: location
@@ -60,7 +60,7 @@ module clientResources 'modules/clientResources.bicep' = [for client in clients:
 
 module privateDnsZone 'modules/privateDnsZone.bicep' = {
   name: 'privateDnsZone'
-  scope: resourceGroup('rg-central')
+  scope: resourceGroup('rg-${discriminator}-central')
   params: {
     clientNames: [for client in clients: client.name]
     discriminator: discriminator
@@ -90,10 +90,10 @@ module peering 'modules/vnetPeering.bicep' = [for client in clients: {
 // Deploy Azure Front Door
 module frontDoorConfiguration 'modules/frontDoorConfigure.bicep' = {
   name: 'frontDoorConfiguration'
-  scope: resourceGroup('rg-central')
+  scope: resourceGroup('rg-${discriminator}-central')
   params: {
     clientNames: [for client in clients: client.name] // Extract only client names for Front Door configuration
-    name: 'globalFrontDoor'
+    name: 'afd-${discriminator}'
     discriminator: discriminator
   }
   dependsOn: [
@@ -114,20 +114,34 @@ param vpnRootCertData string = ''
 // Deploy the managed identity in the central resource group if it doesn't exist
 module deploymentScriptsIdentity 'modules/managedIdentity.bicep' = {
   name: 'deployment-scripts-identity'
-  scope: resourceGroup('rg-central')
+  scope: resourceGroup('rg-${discriminator}-central')
   params: {
-    name: 'uami-deployment-scripts'
+    name: 'uami-scripts' // Simple fallback name without discriminator
     location: location
+    discriminator: discriminator // Pass the discriminator to use new naming convention
   }
   dependsOn: [
     centralResourceGroup
   ]
 }
 
+// Assign Contributor role to the managed identity at subscription scope
+module uamiRoleAssignment 'modules/subscriptionRoleAssignment.bicep' = {
+  name: 'uami-contributor-role-assignment'
+  scope: subscription()
+  params: {
+    principalId: deploymentScriptsIdentity.outputs.principalId
+    roleDefinitionId: 'b24988ac-6180-42a0-ab88-20f7382dd24c' // Contributor role
+  }
+  dependsOn: [
+    deploymentScriptsIdentity
+  ]
+}
+
 // Create Key Vault directly in main.bicep to make sure it exists before VPN deployment
 module centralKeyVault 'modules/centralKeyVault.bicep' = {
   name: 'central-key-vault-deployment'
-  scope: resourceGroup('rg-central')
+  scope: resourceGroup('rg-${discriminator}-central')
   params: {
     name: 'central'
     location: location
@@ -154,7 +168,7 @@ module centralKeyVault 'modules/centralKeyVault.bicep' = {
 // Assign Key Vault Administrator role to the managed identity 
 module kvRoleAssignment 'modules/keyVaultRoleAssignment.bicep' = {
   name: 'kv-role-assignment'
-  scope: resourceGroup('rg-central')
+  scope: resourceGroup('rg-${discriminator}-central')
   params: {
     principalId: deploymentScriptsIdentity.outputs.principalId
     keyVaultName: centralKeyVault.outputs.name
@@ -169,7 +183,7 @@ module kvRoleAssignment 'modules/keyVaultRoleAssignment.bicep' = {
 // Deploy VPN Gateway in the central resource group
 module vpnGateway 'modules/vpn.bicep' = if (deployVpn) {
   name: 'vpnGatewayDeployment'
-  scope: resourceGroup('rg-central')
+  scope: resourceGroup('rg-${discriminator}-central')
   params: {
     discriminator: discriminator
     location: location

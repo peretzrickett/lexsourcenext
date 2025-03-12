@@ -9,6 +9,19 @@ This project uses Azure Bicep to deploy a secure, multi-tenant infrastructure wi
 - [**VPN.md**](/bicep/VPN.md) - VPN setup and client configuration
 - [**DEPLOYMENT.md**](/bicep/DEPLOYMENT.md) - Detailed deployment walkthrough
 - [**CONNECTIVITY.md**](/bicep/CONNECTIVITY.md) - Front Door to Private Endpoint connectivity guide
+- [**DISCRIMINATOR.md**](/bicep/DISCRIMINATOR.md) - Guide to the discriminator pattern for resource naming
+
+## Important: Discriminator Parameter
+
+All operations in this project require a **discriminator parameter** which is used to create unique resource names and enable multiple parallel deployments in the same subscription:
+
+- **Definition**: A short string (4-5 characters) that uniquely identifies an environment or deployment
+- **Default**: If not specified, "lexsb" is used as the default discriminator
+- **Usage**: Pass as the first parameter to any script, e.g., `./go.sh dev` or `./deploy-frontdoor-clienta.sh prod`
+- **Naming Pattern**: Resources follow the pattern `resource-type-{discriminator}-{client}` (e.g., `rg-lexsb-central`)
+- **Purpose**: Enables multiple deployments to coexist without naming conflicts
+
+For detailed information, see [DISCRIMINATOR.md](/bicep/DISCRIMINATOR.md).
 
 ## Architecture Overview
 
@@ -54,7 +67,7 @@ The solution implements a secure connectivity model:
 
 | Module | Purpose | Execution Order | Dependencies |
 |--------|---------|-----------------|--------------|
-| `resourceGroup.bicep` | Creates resource groups | 1 | None |
+| `resourceGroup.bicep` | Creates resource groups (rg-{discriminator}-*) | 1 | None |
 | `managedIdentity.bicep` | Identity for deployment scripts | 2 | Resource groups |
 | `centralResources.bicep` | Hub network and services | 3 | Resource groups |
 | `clientResources.bicep` | Spoke networks and services | 3 | Resource groups |
@@ -67,6 +80,11 @@ The solution implements a secure connectivity model:
 
 - **clients**: Array defining each client environment (name, network CIDR, subnet configuration)
 - **discriminator**: Unique qualifier for resource naming
+  - Critical for all deployments and operations
+  - Default value is "lexsb" if not specified
+  - Pass as first parameter to scripts (e.g., `./go.sh dev`)
+  - Used to create resource group names like: `rg-{discriminator}-central`
+  - See [DISCRIMINATOR.md](/bicep/DISCRIMINATOR.md) for detailed information
 - **location**: Azure region for deployment
 - **deployVpn**: Flag to enable/disable VPN deployment
 
@@ -84,10 +102,10 @@ The solution implements a secure connectivity model:
 3. **Deploy**:
    ```bash
    cd bicep
-   ./go.sh
+   ./go.sh [discriminator]   # Example: ./go.sh dev
    ```
 
-4. **Verify**: Run `./validate-deployment.sh` after deployment completes
+4. **Verify**: Run `./validate-deployment.sh [discriminator]` after deployment completes
 
 ---
 
@@ -138,18 +156,18 @@ The solution implements a secure connectivity model:
 
 1. **Validate Templates**:
    ```bash
-   az deployment sub validate --location eastus --template-file bicep/main.bicep --parameters @bicep/clients.json
+   az deployment sub validate --location eastus --template-file bicep/main.bicep --parameters @bicep/clients.json discriminator=dev
    ```
 
 2. **Preview Changes**:
    ```bash
-   az deployment sub what-if --location eastus --template-file bicep/main.bicep --parameters @bicep/clients.json
+   az deployment sub what-if --location eastus --template-file bicep/main.bicep --parameters @bicep/clients.json discriminator=dev
    ```
 
 3. **Deploy Infrastructure**:
    ```bash
    cd bicep
-   ./go.sh
+   ./go.sh dev  # Specify your discriminator (e.g., dev, test, prod)
    ```
 
 4. **Monitor Deployment**:
@@ -161,24 +179,24 @@ The solution implements a secure connectivity model:
 1. **Validate Connectivity**:
    ```bash
    cd bicep
-   ./validate-deployment.sh
+   ./validate-deployment.sh dev  # Use the same discriminator as deployment
    ```
 
 2. **VPN Configuration**:
    - Download the VPN client package from the Azure Portal
-   - Import the VPN certificate from Key Vault
+   - Import the VPN certificate from Key Vault (kv-{discriminator}-central)
    - Configure client VPN settings
 
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| Failed deployments | Run `./clean-deployments.sh` to clear deployments, then retry |
-| DNS resolution issues | Run `./zone-cleanup.sh` to remove DNS zones, then redeploy |
+| Failed deployments | Run `./clean-deployments.sh [discriminator]` to clear deployments, then retry |
+| DNS resolution issues | Run `./zone-cleanup.sh [discriminator]` to remove DNS zones, then redeploy |
 | Front Door routing problems | Check the Front Door configuration and verify private endpoint connections |
-| Stuck deployments | Run `./cancel-all-deployments.sh` to cancel all running deployments |
-| Complete reset | Run `./clean-all.sh` to remove all deployed resources (use with caution) |
-| VPN issues | Check certificates in Key Vault and VPN configuration |
+| Stuck deployments | Run `./cancel-all-deployments.sh [discriminator]` to cancel all running deployments |
+| Complete reset | Run `./clean-all.sh [discriminator]` to remove all deployed resources (use with caution) |
+| VPN issues | Check certificates in Key Vault (kv-{discriminator}-central) and VPN configuration |
 
 ## Key Configurations
 

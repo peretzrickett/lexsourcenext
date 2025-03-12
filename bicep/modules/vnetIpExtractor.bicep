@@ -25,8 +25,8 @@ param discriminator string
 
 // Reference the existing User Assigned Managed Identity for script execution
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
-  name: 'uami-deployment-scripts'
-  scope: resourceGroup('rg-central') // Ensure this matches the UAMI's resource group
+  name: 'uami-${discriminator}-deploy'
+  scope: resourceGroup('rg-${discriminator}-central') // Ensure this matches the UAMI's resource group
 }
 
 var endpointName = (endpointType == 'stg') ? toLower('ep-${endpointType}${discriminator}${clientName}') : 'ep-${endpointType}-${discriminator}-${clientName}'
@@ -40,7 +40,7 @@ resource privateIpRetrieval 'Microsoft.Resources/deploymentScripts@2023-08-01' =
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${resourceId('rg-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-deployment-scripts')}': {}
+      '${resourceId('rg-${discriminator}-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-${discriminator}-deploy')}': {}
     }
   }
   properties: {

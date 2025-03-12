@@ -1,6 +1,13 @@
 #!/bin/bash
 # Helper script to retrieve VPN client certificate from Key Vault
 
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
+
+# Central resource group name
+CENTRAL_RG="rg-${DISCRIMINATOR}-central"
+
 set -e
 
 # Color codes for messaging
@@ -9,7 +16,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-KV_NAME="kv-lexsb-central"
+KV_NAME="kv-${DISCRIMINATOR}-central"
 PFX_OUTPUT="vpn-client.pfx"
 
 # Try to get the timestamp from Key Vault
@@ -34,7 +41,7 @@ if ! az keyvault list --query "[?name=='$KV_NAME'].name" -o tsv &>/dev/null; the
   
   SUBSCRIPTION_ID=$(az account show --query id -o tsv)
   USER_ID=$(az ad signed-in-user show --query id -o tsv)
-  KV_SCOPE="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-central/providers/Microsoft.KeyVault/vaults/$KV_NAME"
+  KV_SCOPE="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/${CENTRAL_RG}/providers/Microsoft.KeyVault/vaults/$KV_NAME"
   
   # Assign Key Vault Administrator role
   echo -e "${YELLOW}Creating role assignment...${NC}"
@@ -72,7 +79,7 @@ fi
 
 # Get the VPN client configuration package URL directly from the gateway
 echo -e "${YELLOW}Getting VPN client configuration package URL...${NC}"
-VPN_URL=$(az network vnet-gateway vpn-client show-url --resource-group rg-central --name vpngw-lexsb --query "value" -o tsv)
+VPN_URL=$(az network vnet-gateway vpn-client show-url --resource-group ${CENTRAL_RG} --name vpngw-${DISCRIMINATOR} --query "value" -o tsv)
 
 if [ -n "$VPN_URL" ]; then
   echo -e "${GREEN}VPN client configuration package URL:${NC}"

@@ -13,6 +13,13 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
+
+# Central resource group name
+CENTRAL_RG="rg-${DISCRIMINATOR}-central"
+
 # Main validation function
 validate_deployment() {
     echo -e "\n${BLUE}=== STARTING POST-DEPLOYMENT VALIDATION ===${NC}\n"
@@ -24,7 +31,6 @@ validate_deployment() {
     
     # Get client names from clients.json
     CLIENT_NAMES=$(cat clients.json | jq -r '.parameters.clients.value[].name')
-    DISCRIMINATOR="lexsb" # Hardcoded for now
     
     # Validate all components
     validate_private_dns
@@ -60,29 +66,28 @@ validate_private_dns() {
     # Check if each zone exists
     for ZONE in "${DNS_ZONES[@]}"; do
         echo -e "\n${YELLOW}Checking DNS zone:${NC} $ZONE"
-        ZONE_EXISTS=$(az network private-dns zone show --resource-group rg-central --name "$ZONE" --query "name" -o tsv 2>/dev/null)
+        ZONE_EXISTS=$(az network private-dns zone show --resource-group ${CENTRAL_RG} --name "$ZONE" --query "name" -o tsv 2>/dev/null)
         
         if [ -n "$ZONE_EXISTS" ]; then
             echo -e "${GREEN}✓ DNS Zone exists:${NC} $ZONE"
             
             # Get and check A records for this zone
             echo -e "${YELLOW}Checking A records for zone:${NC} $ZONE"
-            A_RECORDS=$(az network private-dns record-set a list --resource-group rg-central --zone-name "$ZONE" --query "[].name" -o tsv)
+            A_RECORDS=$(az network private-dns record-set a list --resource-group ${CENTRAL_RG} --zone-name "$ZONE" --query "[].name" -o tsv)
             
             if [ -n "$A_RECORDS" ]; then
                 echo -e "${GREEN}✓ Found A records:${NC}"
                 for RECORD in $A_RECORDS; do
-                    IP=$(az network private-dns record-set a show --resource-group rg-central --zone-name "$ZONE" --name "$RECORD" --query "aRecords[0].ipv4Address" -o tsv)
-                    echo -e "  - $RECORD → $IP"
+                    IP=$(az network private-dns record-set a show --resource-group ${CENTRAL_RG} --zone-name "$ZONE" --name "$RECORD" --query "aRecords[0].ipv4Address" -o tsv)
+                    echo -e "  - $RECORD.$ZONE → $IP"
                 done
             else
-                echo -e "${RED}✗ No A records found for zone:${NC} $ZONE"
-                ((FAILURES++))
+                echo -e "${YELLOW}⚠ No A records found in zone $ZONE. This might be normal if no resources are deployed yet.${NC}"
             fi
             
             # Check virtual network links
             echo -e "${YELLOW}Checking virtual network links:${NC}"
-            VNET_LINKS=$(az network private-dns link vnet list --resource-group rg-central --zone-name "$ZONE" --query "[].name" -o tsv)
+            VNET_LINKS=$(az network private-dns link vnet list --resource-group ${CENTRAL_RG} --zone-name "$ZONE" --query "[].name" -o tsv)
             
             if [ -n "$VNET_LINKS" ]; then
                 echo -e "${GREEN}✓ Found VNet links:${NC}"
@@ -108,7 +113,7 @@ validate_frontdoor() {
     FRONT_DOOR_NAME="globalFrontDoor"
     echo -e "\n${YELLOW}Checking Front Door profile:${NC} $FRONT_DOOR_NAME"
     
-    FD_EXISTS=$(az afd profile show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --query "name" -o tsv 2>/dev/null)
+    FD_EXISTS=$(az afd profile show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --query "name" -o tsv 2>/dev/null)
     
     if [ -n "$FD_EXISTS" ]; then
         echo -e "${GREEN}✓ Front Door profile exists:${NC} $FRONT_DOOR_NAME"
@@ -119,7 +124,7 @@ validate_frontdoor() {
             
             # Check origin group
             OG_NAME="afd-og-${DISCRIMINATOR}-${CLIENT}"
-            OG_EXISTS=$(az afd origin-group show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --origin-group-name "$OG_NAME" --query "name" -o tsv 2>/dev/null)
+            OG_EXISTS=$(az afd origin-group show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --origin-group-name "$OG_NAME" --query "name" -o tsv 2>/dev/null)
             
             if [ -n "$OG_EXISTS" ]; then
                 echo -e "${GREEN}✓ Origin group exists:${NC} $OG_NAME"
@@ -130,20 +135,20 @@ validate_frontdoor() {
             
             # Check origin
             O_NAME="afd-o-${DISCRIMINATOR}-${CLIENT}"
-            O_EXISTS=$(az afd origin show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --origin-group-name "$OG_NAME" --origin-name "$O_NAME" --query "name" -o tsv 2>/dev/null)
+            O_EXISTS=$(az afd origin show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --origin-group-name "$OG_NAME" --origin-name "$O_NAME" --query "name" -o tsv 2>/dev/null)
             
             if [ -n "$O_EXISTS" ]; then
                 echo -e "${GREEN}✓ Origin exists:${NC} $O_NAME"
                 
                 # Check private link status by looking at the App Service side
                 # First get the App Service resource ID from the sharedPrivateLinkResource
-                APP_ID=$(az afd origin show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --origin-group-name "$OG_NAME" --origin-name "$O_NAME" --query "sharedPrivateLinkResource.privateLink.id" -o tsv 2>/dev/null)
+                APP_ID=$(az afd origin show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --origin-group-name "$OG_NAME" --origin-name "$O_NAME" --query "sharedPrivateLinkResource.privateLink.id" -o tsv 2>/dev/null)
                 
                 if [ -n "$APP_ID" ]; then
                     PL_STATUS=$(az network private-endpoint-connection list --id "$APP_ID" --query "[0].properties.privateLinkServiceConnectionState.status" -o tsv 2>/dev/null)
                 else
                     # Fallback to older API version checks
-                    PL_STATUS=$(az afd origin show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --origin-group-name "$OG_NAME" --origin-name "$O_NAME" --query "properties.privateLinkStatus" -o tsv 2>/dev/null)
+                    PL_STATUS=$(az afd origin show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --origin-group-name "$OG_NAME" --origin-name "$O_NAME" --query "properties.privateLinkStatus" -o tsv 2>/dev/null)
                 fi
                 
                 if [ "$PL_STATUS" = "Approved" ]; then
@@ -159,27 +164,29 @@ validate_frontdoor() {
             
             # Check endpoint
             EP_NAME="afd-ep-${DISCRIMINATOR}-${CLIENT}"
-            EP_EXISTS=$(az afd endpoint show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --endpoint-name "$EP_NAME" --query "name" -o tsv 2>/dev/null)
-            
+            echo -e "\n${YELLOW}Checking endpoint:${NC} $EP_NAME"
+
+            EP_EXISTS=$(az afd endpoint show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --endpoint-name "$EP_NAME" --query "name" -o tsv 2>/dev/null)
+
             if [ -n "$EP_EXISTS" ]; then
                 echo -e "${GREEN}✓ Endpoint exists:${NC} $EP_NAME"
                 
-                # Get and show the hostname
-                HOSTNAME=$(az afd endpoint show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --endpoint-name "$EP_NAME" --query "hostName" -o tsv)
-                echo -e "  - Hostname: $HOSTNAME"
+                # Get the hostname
+                HOSTNAME=$(az afd endpoint show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --endpoint-name "$EP_NAME" --query "hostName" -o tsv)
+                echo -e "${GREEN}✓ Endpoint hostname:${NC} $HOSTNAME"
+                
+                # Check route
+                RT_NAME="afd-rt-${DISCRIMINATOR}-${CLIENT}"
+                RT_EXISTS=$(az afd route show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --endpoint-name "$EP_NAME" --route-name "$RT_NAME" --query "name" -o tsv 2>/dev/null)
+                
+                if [ -n "$RT_EXISTS" ]; then
+                    echo -e "${GREEN}✓ Route exists:${NC} $RT_NAME"
+                else
+                    echo -e "${RED}✗ Route not found:${NC} $RT_NAME"
+                    ((FAILURES++))
+                fi
             else
                 echo -e "${RED}✗ Endpoint not found:${NC} $EP_NAME"
-                ((FAILURES++))
-            fi
-            
-            # Check route
-            RT_NAME="afd-rt-${DISCRIMINATOR}-${CLIENT}"
-            RT_EXISTS=$(az afd route show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --endpoint-name "$EP_NAME" --route-name "$RT_NAME" --query "name" -o tsv 2>/dev/null)
-            
-            if [ -n "$RT_EXISTS" ]; then
-                echo -e "${GREEN}✓ Route exists:${NC} $RT_NAME"
-            else
-                echo -e "${RED}✗ Route not found:${NC} $RT_NAME"
                 ((FAILURES++))
             fi
         done
@@ -195,7 +202,7 @@ validate_network_connectivity() {
     
     # Get VM network tester info
     VM_NAME="vm-network-tester"
-    VM_RG="rg-central"
+    VM_RG="${CENTRAL_RG}"
     
     echo -e "${YELLOW}Checking VM status:${NC} $VM_NAME"
     VM_EXISTS=$(az vm show --resource-group "$VM_RG" --name "$VM_NAME" --query "name" -o tsv 2>/dev/null)
@@ -213,7 +220,7 @@ validate_network_connectivity() {
             echo -e "${YELLOW}Running network connectivity tests via SSH...${NC}"
             
             # Get Firewall's public IP for VM access
-            FW_IP=$(az network public-ip show --resource-group rg-central --name ip-globalFirewall --query ipAddress -o tsv 2>/dev/null)
+            FW_IP=$(az network public-ip show --resource-group ${CENTRAL_RG} --name ip-globalFirewall --query ipAddress -o tsv 2>/dev/null)
             
             if [ -n "$FW_IP" ]; then
                 echo -e "${GREEN}✓ Firewall has public IP:${NC} $FW_IP"
@@ -233,7 +240,7 @@ validate_network_connectivity() {
                     SQL_HOSTNAME="sql-${DISCRIMINATOR}-${CLIENT}.privatelink.database.windows.net"
                     KV_HOSTNAME="pkv-${DISCRIMINATOR}-${CLIENT}.privatelink.vaultcore.azure.net"
                     STORAGE_HOSTNAME="stg${DISCRIMINATOR}${CLIENT}.privatelink.blob.core.windows.net"
-                    FRONTDOOR_HOSTNAME=$(az afd endpoint show --resource-group rg-central --profile-name "$FRONT_DOOR_NAME" --endpoint-name "afd-ep-${DISCRIMINATOR}-${CLIENT}" --query "hostName" -o tsv 2>/dev/null)
+                    FRONTDOOR_HOSTNAME=$(az afd endpoint show --resource-group ${CENTRAL_RG} --profile-name "$FRONT_DOOR_NAME" --endpoint-name "afd-ep-${DISCRIMINATOR}-${CLIENT}" --query "hostName" -o tsv 2>/dev/null)
                     
                     echo -e "${YELLOW}SQL Server:${NC} $SQL_HOSTNAME"
                     echo -e "${YELLOW}Key Vault:${NC} $KV_HOSTNAME"

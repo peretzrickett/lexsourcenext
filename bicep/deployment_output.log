@@ -1,17 +1,18 @@
-WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486,17) : Warning use-safe-access: Use the safe access (.?) operator. [https://aka.ms/bicep/linter/use-safe-access]
-/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(150,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'deploymentScriptsIdentity'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
-/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(163,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'centralKeyVault'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
-/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(186,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'centralKeyVault'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
-/Users/peretzrickett/Projects/lexsourcenext/bicep/modules/frontDoorConfigure.bicep(327,28) : Warning no-hardcoded-env-urls: Environment URLs should not be hardcoded. Use the environment() function to ensure compatibility across clouds. Found this disallowed host: "management.azure.com" [https://aka.ms/bicep/linter/no-hardcoded-env-urls]
+WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/frontDoorConfigure.bicep(327,28) : Warning no-hardcoded-env-urls: Environment URLs should not be hardcoded. Use the environment() function to ensure compatibility across clouds. Found this disallowed host: "management.azure.com" [https://aka.ms/bicep/linter/no-hardcoded-env-urls]
 /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/frontDoorConfigure.bicep(356,28) : Warning no-hardcoded-env-urls: Environment URLs should not be hardcoded. Use the environment() function to ensure compatibility across clouds. Found this disallowed host: "management.azure.com" [https://aka.ms/bicep/linter/no-hardcoded-env-urls]
 /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/frontDoorConfigure.bicep(370,28) : Warning no-hardcoded-env-urls: Environment URLs should not be hardcoded. Use the environment() function to ensure compatibility across clouds. Found this disallowed host: "management.azure.com" [https://aka.ms/bicep/linter/no-hardcoded-env-urls]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(137,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'deploymentScriptsIdentity'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(164,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'deploymentScriptsIdentity'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(177,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'centralKeyVault'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/main.bicep(200,5) : Warning no-unnecessary-dependson: Remove unnecessary dependsOn entry 'centralKeyVault'. [https://aka.ms/bicep/linter/no-unnecessary-dependson]
+/Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486,17) : Warning use-safe-access: Use the safe access (.?) operator. [https://aka.ms/bicep/linter/use-safe-access]
 
 {
-  "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/bicep-20250307190230",
+  "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/bicep-lexwa-20250312091154",
   "location": "eastus",
-  "name": "bicep-20250307190230",
+  "name": "bicep-lexwa-20250312091154",
   "properties": {
-    "correlationId": "f0830166-72d1-4fbd-9284-e66167d2ad06",
+    "correlationId": "8da6d7db-69f1-4194-9b36-a2d27d5a2675",
     "debugSetting": null,
     "dependencies": [
       {
@@ -22,46 +23,46 @@ WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
-            "resourceGroup": "rg-ClientA",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+            "resourceGroup": "rg-lexwa-ClientA",
             "resourceName": "ClientA-resources",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
-            "resourceGroup": "rg-ClientB",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
+            "resourceGroup": "rg-lexwa-ClientB",
             "resourceName": "ClientB-resources",
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
-        "resourceGroup": "rg-central",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
+        "resourceGroup": "rg-lexwa-central",
         "resourceName": "centralResourcesDeployment",
         "resourceType": "Microsoft.Resources/deployments"
       },
       {
         "dependsOn": [
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "centralResourcesDeployment",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
-            "resourceGroup": "rg-ClientA",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+            "resourceGroup": "rg-lexwa-ClientA",
             "resourceName": "ClientA-resources",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
-            "resourceGroup": "rg-ClientB",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
+            "resourceGroup": "rg-lexwa-ClientB",
             "resourceName": "ClientB-resources",
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/privateDnsZone",
-        "resourceGroup": "rg-central",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/privateDnsZone",
+        "resourceGroup": "rg-lexwa-central",
         "resourceName": "privateDnsZone",
         "resourceType": "Microsoft.Resources/deployments"
       },
@@ -78,8 +79,8 @@ WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/frontDoorConfiguration",
-        "resourceGroup": "rg-central",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/frontDoorConfiguration",
+        "resourceGroup": "rg-lexwa-central",
         "resourceName": "frontDoorConfiguration",
         "resourceType": "Microsoft.Resources/deployments"
       },
@@ -91,9 +92,29 @@ WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
-        "resourceGroup": "rg-central",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+        "resourceGroup": "rg-lexwa-central",
         "resourceName": "deployment-scripts-identity",
+        "resourceType": "Microsoft.Resources/deployments"
+      },
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+            "resourceGroup": "rg-lexwa-central",
+            "resourceName": "deployment-scripts-identity",
+            "resourceType": "Microsoft.Resources/deployments"
+          },
+          {
+            "apiVersion": "2022-09-01",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+            "resourceGroup": "rg-lexwa-central",
+            "resourceName": "deployment-scripts-identity",
+            "resourceType": "Microsoft.Resources/deployments"
+          }
+        ],
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/uami-contributor-role-assignment",
+        "resourceName": "uami-contributor-role-assignment",
         "resourceType": "Microsoft.Resources/deployments"
       },
       {
@@ -104,169 +125,169 @@ WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "deployment-scripts-identity",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
             "apiVersion": "2022-09-01",
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "deployment-scripts-identity",
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
-        "resourceGroup": "rg-central",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
+        "resourceGroup": "rg-lexwa-central",
         "resourceName": "central-key-vault-deployment",
         "resourceType": "Microsoft.Resources/deployments"
       },
       {
         "dependsOn": [
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "central-key-vault-deployment",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "deployment-scripts-identity",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
             "apiVersion": "2022-09-01",
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "deployment-scripts-identity",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
             "apiVersion": "2022-09-01",
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "central-key-vault-deployment",
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/kv-role-assignment",
-        "resourceGroup": "rg-central",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/kv-role-assignment",
+        "resourceGroup": "rg-lexwa-central",
         "resourceName": "kv-role-assignment",
         "resourceType": "Microsoft.Resources/deployments"
       },
       {
         "dependsOn": [
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "central-key-vault-deployment",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "centralResourcesDeployment",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "deployment-scripts-identity",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/frontDoorConfiguration",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/frontDoorConfiguration",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "frontDoorConfiguration",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/kv-role-assignment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/kv-role-assignment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "kv-role-assignment",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
             "apiVersion": "2022-09-01",
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/deployment-scripts-identity",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "deployment-scripts-identity",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
             "apiVersion": "2022-09-01",
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/central-key-vault-deployment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "central-key-vault-deployment",
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/vpnGatewayDeployment",
-        "resourceGroup": "rg-central",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/vpnGatewayDeployment",
+        "resourceGroup": "rg-lexwa-central",
         "resourceName": "vpnGatewayDeployment",
         "resourceType": "Microsoft.Resources/deployments"
       },
       {
         "dependsOn": [
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/rg-ClientA",
-            "resourceName": "rg-ClientA",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/rg-lexwa-ClientA",
+            "resourceName": "rg-lexwa-ClientA",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/rg-ClientB",
-            "resourceName": "rg-ClientB",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/rg-lexwa-ClientB",
+            "resourceName": "rg-lexwa-ClientB",
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
-        "resourceGroup": "rg-ClientA",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+        "resourceGroup": "rg-lexwa-ClientA",
         "resourceName": "ClientA-resources",
         "resourceType": "Microsoft.Resources/deployments"
       },
       {
         "dependsOn": [
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/rg-ClientA",
-            "resourceName": "rg-ClientA",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/rg-lexwa-ClientA",
+            "resourceName": "rg-lexwa-ClientA",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/rg-ClientB",
-            "resourceName": "rg-ClientB",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Resources/deployments/rg-lexwa-ClientB",
+            "resourceName": "rg-lexwa-ClientB",
             "resourceType": "Microsoft.Resources/deployments"
           }
         ],
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
-        "resourceGroup": "rg-ClientB",
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
+        "resourceGroup": "rg-lexwa-ClientB",
         "resourceName": "ClientB-resources",
         "resourceType": "Microsoft.Resources/deployments"
       },
       {
         "dependsOn": [
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "centralResourcesDeployment",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
-            "resourceGroup": "rg-ClientA",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+            "resourceGroup": "rg-lexwa-ClientA",
             "resourceName": "ClientA-resources",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
-            "resourceGroup": "rg-ClientB",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
+            "resourceGroup": "rg-lexwa-ClientB",
             "resourceName": "ClientB-resources",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/privateDnsZone",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/privateDnsZone",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "privateDnsZone",
             "resourceType": "Microsoft.Resources/deployments"
           }
@@ -278,26 +299,26 @@ WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486
       {
         "dependsOn": [
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/centralResourcesDeployment",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "centralResourcesDeployment",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
-            "resourceGroup": "rg-ClientA",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deployments/ClientA-resources",
+            "resourceGroup": "rg-lexwa-ClientA",
             "resourceName": "ClientA-resources",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
-            "resourceGroup": "rg-ClientB",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deployments/ClientB-resources",
+            "resourceGroup": "rg-lexwa-ClientB",
             "resourceName": "ClientB-resources",
             "resourceType": "Microsoft.Resources/deployments"
           },
           {
-            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deployments/privateDnsZone",
-            "resourceGroup": "rg-central",
+            "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deployments/privateDnsZone",
+            "resourceGroup": "rg-lexwa-central",
             "resourceName": "privateDnsZone",
             "resourceType": "Microsoft.Resources/deployments"
           },
@@ -312,493 +333,496 @@ WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486
         "resourceType": "Microsoft.Resources/deployments"
       }
     ],
-    "duration": "PT21M27.4132373S",
+    "duration": "PT39M9.8306939S",
     "error": null,
     "mode": "Incremental",
     "onErrorDeployment": null,
     "outputResources": [
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/providers/Microsoft.Authorization/roleAssignments/9713c247-52c4-59c1-b2b6-7926760d0764"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Cdn/profiles/globalFrontDoor",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.KeyVault/vaults/kv-lexsb-central",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Cdn/profiles/afd-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.KeyVault/vaults/kv-lexsb-central/providers/Microsoft.Authorization/roleAssignments/7b0021c9-3d52-5114-b9b9-819cef70994c",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.KeyVault/vaults/kv-lexwa-central",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uami-deployment-scripts",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.KeyVault/vaults/kv-lexwa-central/providers/Microsoft.Authorization/roleAssignments/60eddc6e-0905-5f49-95cb-d576a66005b9",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/azureFirewalls/globalFirewall",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uami-lexwa-deploy",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/firewallPolicies/globalFirewall-policy",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/azureFirewalls/afw-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/firewallPolicies/globalFirewall-policy/ruleCollectionGroups/DefaultApplicationRuleCollectionGroup",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/firewallPolicies/afwp-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/firewallPolicies/globalFirewall-policy/ruleCollectionGroups/DefaultNatRuleCollectionGroup",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/firewallPolicies/afwp-lexwa/ruleCollectionGroups/DefaultApplicationRuleCollectionGroup",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/firewallPolicies/globalFirewall-policy/ruleCollectionGroups/DefaultNetworkRuleCollectionGroup",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/firewallPolicies/afwp-lexwa/ruleCollectionGroups/DefaultNatRuleCollectionGroup",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/firewallPolicies/afwp-lexwa/ruleCollectionGroups/DefaultNetworkRuleCollectionGroup",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.azurewebsites.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net/virtualNetworkLinks/dnsl-lexsb-ClientA-privatelink.azurewebsites.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net/virtualNetworkLinks/dnsl-lexwa-central-privatelink.azurewebsites.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net/virtualNetworkLinks/dnsl-lexsb-ClientB-privatelink.azurewebsites.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net/virtualNetworkLinks/dnsl-lexwa-ClientA-privatelink.azurewebsites.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net/virtualNetworkLinks/dnsl-lexwa-ClientB-privatelink.azurewebsites.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.blob.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net/virtualNetworkLinks/dnsl-lexsb-ClientA-privatelink.blob.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net/virtualNetworkLinks/dnsl-lexwa-central-privatelink.blob.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net/virtualNetworkLinks/dnsl-lexsb-ClientB-privatelink.blob.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net/virtualNetworkLinks/dnsl-lexwa-ClientA-privatelink.blob.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net/virtualNetworkLinks/dnsl-lexwa-ClientB-privatelink.blob.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net/virtualNetworkLinks/dnsl-lexsb-ClientA-privatelink.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net/virtualNetworkLinks/dnsl-lexwa-central-privatelink.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net/virtualNetworkLinks/dnsl-lexsb-ClientB-privatelink.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net/virtualNetworkLinks/dnsl-lexwa-ClientA-privatelink.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.core.windows.net/virtualNetworkLinks/dnsl-lexwa-ClientB-privatelink.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.database.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net/virtualNetworkLinks/dnsl-lexsb-ClientA-privatelink.database.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net/virtualNetworkLinks/dnsl-lexwa-central-privatelink.database.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net/virtualNetworkLinks/dnsl-lexsb-ClientB-privatelink.database.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net/virtualNetworkLinks/dnsl-lexwa-ClientA-privatelink.database.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net/virtualNetworkLinks/dnsl-lexwa-ClientB-privatelink.database.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.file.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net/virtualNetworkLinks/dnsl-lexsb-ClientA-privatelink.file.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net/virtualNetworkLinks/dnsl-lexwa-central-privatelink.file.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net/virtualNetworkLinks/dnsl-lexsb-ClientB-privatelink.file.core.windows.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net/virtualNetworkLinks/dnsl-lexwa-ClientA-privatelink.file.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net/virtualNetworkLinks/dnsl-lexwa-ClientB-privatelink.file.core.windows.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com/virtualNetworkLinks/dnsl-lexsb-central-privatelink.insights.azure.com",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com/virtualNetworkLinks/dnsl-lexsb-ClientA-privatelink.insights.azure.com",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com/virtualNetworkLinks/dnsl-lexwa-central-privatelink.insights.azure.com",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com/virtualNetworkLinks/dnsl-lexsb-ClientB-privatelink.insights.azure.com",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com/virtualNetworkLinks/dnsl-lexwa-ClientA-privatelink.insights.azure.com",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.insights.azure.com/virtualNetworkLinks/dnsl-lexwa-ClientB-privatelink.insights.azure.com",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com/virtualNetworkLinks/dnsl-lexsb-central-privatelink.monitor.azure.com",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com/virtualNetworkLinks/dnsl-lexsb-ClientA-privatelink.monitor.azure.com",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com/virtualNetworkLinks/dnsl-lexwa-central-privatelink.monitor.azure.com",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com/virtualNetworkLinks/dnsl-lexsb-ClientB-privatelink.monitor.azure.com",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com/virtualNetworkLinks/dnsl-lexwa-ClientA-privatelink.monitor.azure.com",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.monitor.azure.com/virtualNetworkLinks/dnsl-lexwa-ClientB-privatelink.monitor.azure.com",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/virtualNetworkLinks/dnsl-lexsb-central-privatelink.vaultcore.azure.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/virtualNetworkLinks/dnsl-lexsb-ClientA-privatelink.vaultcore.azure.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/virtualNetworkLinks/dnsl-lexwa-central-privatelink.vaultcore.azure.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/virtualNetworkLinks/dnsl-lexsb-ClientB-privatelink.vaultcore.azure.net",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/virtualNetworkLinks/dnsl-lexwa-ClientA-privatelink.vaultcore.azure.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/publicIPAddresses/ip-globalFirewall",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/virtualNetworkLinks/dnsl-lexwa-ClientB-privatelink.vaultcore.azure.net",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/publicIPAddresses/vpngw-pip-lexsb",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/publicIPAddresses/afw-pip-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/routeTables/RouteTable",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/publicIPAddresses/vpngw-pip-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworkGateways/vpngw-lexsb",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/routeTables/rt-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-Central",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/virtualNetworkGateways/vpngw-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-central/subnets/GatewaySubnet",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-Central",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-Central/subnets/OtherServices",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-central/subnets/GatewaySubnet",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-Central/virtualNetworkPeerings/vnet-lexsb-Central-to-vnet-lexsb-ClientA",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-Central/subnets/OtherServices",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-Central/virtualNetworkPeerings/vnet-lexsb-Central-to-vnet-lexsb-ClientB",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-Central/virtualNetworkPeerings/vnet-lexwa-Central-to-vnet-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/vpnServerConfigurations/vpnconfig-lexsb",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-Central/virtualNetworkPeerings/vnet-lexwa-Central-to-vnet-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.OperationalInsights/workspaces/globalSentinelWorkspace",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/vpnServerConfigurations/vpnconfig-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/approve-pl-connections-globalFrontDoor",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.OperationalInsights/workspaces/saw-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/configure-frontend-globalFrontDoor",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/approve-pl-connections-afd-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-app-dfy2rc52wmues",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/configure-frontend-afd-lexwa",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-pai-tllhrcvmdeu3e",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-app-7ahewgjdn6bdm",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-pai-u4yrgutb6r4vs",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-pai-m3ss75muq6mte",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-pkv-3zfr3ihrseofk",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-pai-qyxadb6arbuk4",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-sql-75f536yffueda",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-pkv-ophto3ec5zfyy",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-stg-uow6vygykuupa",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-sql-ct2cjk47xb4yg",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-stg-veiz6qk3tzsj2",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-stg-o44qowtk3q62k",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-stg-xk3jg6f7zb3l6",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-stg-ych4aay4yjppo",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Resources/deploymentScripts/vpn-cert-generator",
-        "resourceGroup": "rg-central"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/create-dns-records-stg-zdef4cn37ijqy",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Resources/deploymentScripts/vpn-cert-generator",
+        "resourceGroup": "rg-lexwa-central"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Insights/components/pai-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/microsoft.insights/privateLinkScopes/pls-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Insights/components/pai-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Insights/privateLinkScopes/pls-lexsb-ClientA/scopedResources/pls-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/microsoft.insights/privateLinkScopes/pls-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.KeyVault/vaults/pkv-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Insights/privateLinkScopes/pls-lexwa-ClientA/scopedResources/pls-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/networkSecurityGroups/nsg-lexsb-ClientA-backend",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.KeyVault/vaults/pkv-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/networkSecurityGroups/nsg-lexsb-ClientA-frontend",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/networkSecurityGroups/nsg-lexwa-ClientA-backend",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/networkSecurityGroups/nsg-lexsb-ClientA-privatelink",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/networkSecurityGroups/nsg-lexwa-ClientA-frontend",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateEndpoints/pe-pai-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/networkSecurityGroups/nsg-lexwa-ClientA-privatelink",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateEndpoints/pe-pkv-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/privateEndpoints/pe-pai-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateEndpoints/pe-sql-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/privateEndpoints/pe-pkv-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/privateEndpoints/pe-stglexsbclienta",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/privateEndpoints/pe-sql-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/privateEndpoints/pe-stglexwaclienta",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-ClientA/virtualNetworkPeerings/vnet-lexsb-ClientA-to-vnet-lexsb-Central",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.OperationalInsights/workspaces/law-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-ClientA/virtualNetworkPeerings/vnet-lexwa-ClientA-to-vnet-lexwa-Central",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pai-lexsb-ClientA-khgtvbir2f542",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.OperationalInsights/workspaces/law-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pai-lexsb-ClientA-reuo2k453hrvk",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pai-lexwa-ClientA-cch5br33tkfzk",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pkv-lexsb-ClientA-255hizqyblsme",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pai-lexwa-ClientA-vok64xmtjohhc",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-sql-lexsb-ClientA-stuprv75qleke",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pkv-lexwa-ClientA-mj5avmccse6ci",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexsbclienta-k2p2bevzo5ywa",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-sql-lexwa-ClientA-o7uy6zkz6an3k",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexsbclienta-nntfydwofyyae",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexwaclienta-jdgoccteloxoy",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexsbclienta-tcgx3bawjkgde",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexwaclienta-w3pjoic44cg76",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Sql/servers/sql-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexwaclienta-xplidkq6krxvq",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Storage/storageAccounts/stglexsbclienta",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Sql/servers/sql-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Storage/storageAccounts/stglexsbclienta/blobServices/default",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Storage/storageAccounts/stglexwaclienta",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Web/serverfarms/asp-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Storage/storageAccounts/stglexwaclienta/blobServices/default",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Web/sites/app-lexsb-ClientA",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Web/serverfarms/asp-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientA/providers/Microsoft.Web/sites/app-lexsb-ClientA/networkConfig/virtualNetwork",
-        "resourceGroup": "rg-ClientA"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Web/sites/app-lexwa-ClientA",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientA/providers/Microsoft.Web/sites/app-lexwa-ClientA/networkConfig/virtualNetwork",
+        "resourceGroup": "rg-lexwa-ClientA"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Insights/components/pai-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/microsoft.insights/privateLinkScopes/pls-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Insights/components/pai-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Insights/privateLinkScopes/pls-lexsb-ClientB/scopedResources/pls-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/microsoft.insights/privateLinkScopes/pls-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.KeyVault/vaults/pkv-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Insights/privateLinkScopes/pls-lexwa-ClientB/scopedResources/pls-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/networkSecurityGroups/nsg-lexsb-ClientB-backend",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.KeyVault/vaults/pkv-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/networkSecurityGroups/nsg-lexsb-ClientB-frontend",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/networkSecurityGroups/nsg-lexwa-ClientB-backend",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/networkSecurityGroups/nsg-lexsb-ClientB-privatelink",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/networkSecurityGroups/nsg-lexwa-ClientB-frontend",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateEndpoints/pe-pai-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/networkSecurityGroups/nsg-lexwa-ClientB-privatelink",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateEndpoints/pe-pkv-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/privateEndpoints/pe-pai-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateEndpoints/pe-sql-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/privateEndpoints/pe-pkv-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/privateEndpoints/pe-stglexsbclientb",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/privateEndpoints/pe-sql-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/privateEndpoints/pe-stglexwaclientb",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Network/virtualNetworks/vnet-lexsb-ClientB/virtualNetworkPeerings/vnet-lexsb-ClientB-to-vnet-lexsb-Central",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.OperationalInsights/workspaces/law-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Network/virtualNetworks/vnet-lexwa-ClientB/virtualNetworkPeerings/vnet-lexwa-ClientB-to-vnet-lexwa-Central",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pai-lexsb-ClientB-qvqgoplzzaqfi",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.OperationalInsights/workspaces/law-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pai-lexsb-ClientB-rf25iluzm2f3q",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pai-lexwa-ClientB-i44y3b6hbab3m",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pkv-lexsb-ClientB-wjep7qzpxvwrw",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pai-lexwa-ClientB-nevpcy4ozll6y",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-sql-lexsb-ClientB-dpfdzoprgg7ie",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-pkv-lexwa-ClientB-vmawkeqk6zgqk",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexsbclientb-5nxdiwozisyx4",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-sql-lexwa-ClientB-yurvbqccs5w7q",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexsbclientb-6ncuen7fkzyi6",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexwaclientb-6vdsq67zwto6i",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexsbclientb-zzj4eusm4ov2a",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexwaclientb-7yuhnslbimtp4",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Sql/servers/sql-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Resources/deploymentScripts/extract-private-ip-ep-stglexwaclientb-a5bjnpujpso6m",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Storage/storageAccounts/stglexsbclientb",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Sql/servers/sql-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Storage/storageAccounts/stglexsbclientb/blobServices/default",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Storage/storageAccounts/stglexwaclientb",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Web/serverfarms/asp-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Storage/storageAccounts/stglexwaclientb/blobServices/default",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Web/sites/app-lexsb-ClientB",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Web/serverfarms/asp-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
       },
       {
-        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-ClientB/providers/Microsoft.Web/sites/app-lexsb-ClientB/networkConfig/virtualNetwork",
-        "resourceGroup": "rg-ClientB"
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Web/sites/app-lexwa-ClientB",
+        "resourceGroup": "rg-lexwa-ClientB"
+      },
+      {
+        "id": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-ClientB/providers/Microsoft.Web/sites/app-lexwa-ClientB/networkConfig/virtualNetwork",
+        "resourceGroup": "rg-lexwa-ClientB"
       }
     ],
     "outputs": {
       "vpnClientPackageUrl": {
         "type": "String",
-        "value": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-central/providers/Microsoft.Network/virtualNetworkGateways/vpngw-lexsb/vpnclientpackage"
+        "value": "/subscriptions/ed42d05a-0eb7-4618-b08d-495f9f21ab85/resourceGroups/rg-lexwa-central/providers/Microsoft.Network/virtualNetworkGateways/vpngw-lexwa/vpnclientpackage"
       }
     },
     "parameters": {
@@ -831,7 +855,7 @@ WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486
       },
       "discriminator": {
         "type": "String",
-        "value": "lexsb"
+        "value": "lexwa"
       },
       "location": {
         "type": "String",
@@ -873,9 +897,9 @@ WARNING: /Users/peretzrickett/Projects/lexsourcenext/bicep/modules/vpn.bicep(486
       }
     ],
     "provisioningState": "Succeeded",
-    "templateHash": "10631410930968620531",
+    "templateHash": "17133819486740886731",
     "templateLink": null,
-    "timestamp": "2025-03-07T17:24:37.969109+00:00",
+    "timestamp": "2025-03-12T07:51:45.367903+00:00",
     "validatedResources": null
   },
   "tags": null,

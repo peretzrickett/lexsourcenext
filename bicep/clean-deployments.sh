@@ -1,7 +1,11 @@
 #!/bin/zsh
 
-# Array of resource groups to check
-RESOURCE_GROUPS=(rg-central rg-clienta rg-clientb)
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
+
+# Array of resource groups to check with discriminator
+RESOURCE_GROUPS=(rg-${DISCRIMINATOR}-central rg-${DISCRIMINATOR}-clienta rg-${DISCRIMINATOR}-clientb)
 
 # Maximum concurrent processes
 MAX_CONCURRENT=3

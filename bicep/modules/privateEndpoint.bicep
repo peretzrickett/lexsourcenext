@@ -21,7 +21,7 @@ param tags object = {}
 // Reference the existing virtual network in the spoke
 resource existingVnet 'Microsoft.Network/virtualNetworks@2023-02-01' existing = {
   name: 'vnet-${discriminator}-${clientName}'
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
 }
 
 // Reference the existing PrivateLink subnet in the spoke VNet

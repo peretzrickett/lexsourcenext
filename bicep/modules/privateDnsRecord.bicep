@@ -15,22 +15,25 @@ param privateDnsZoneName string
 @description('Timeout duration in seconds for the deployment script, defaults to 300 seconds')
 param timeout int = 600
 
+@description('Location for resources')
+param location string = resourceGroup().location
+
 // Existing private endpoints for non-App Service resources (only in spoke VNets)
 resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' existing = [for (name, index) in clientNames: if (endpointType != 'app') {
   name: 'pe-${endpointType}-${discriminator}-${name}'
-  scope: resourceGroup('rg-${name}')
+  scope: resourceGroup('rg-${discriminator}-${name}')
 }]
 
 resource privateStorageEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' existing = [for (name, index) in clientNames: if (endpointType == 'stg') {
   name: 'pe-stg${discriminator}${name}'
-  scope: resourceGroup('rg-${name}')
+  scope: resourceGroup('rg-${discriminator}-${name}')
 }]
 
 // Extract Private IPs and FQDNs for non-App Service resources in each spoke
 // Note: Adding a unique suffix to avoid conflicts with previous deployments
 module privateIpExtractor 'vnetIpExtractor.bicep' = [for (name, index) in clientNames: if (endpointType != 'app') {
   name: 'extractIp-${name}-${endpointType}-${uniqueString(resourceGroup().id, deployment().name)}'
-  scope: resourceGroup('rg-${name}')
+  scope: resourceGroup('rg-${discriminator}-${name}')
   params: {
     privateEndpointId: (endpointType == 'stg') ? privateStorageEndpoint[index].id : privateEndpoint[index].id
     timeout: timeout
@@ -44,16 +47,15 @@ module privateIpExtractor 'vnetIpExtractor.bicep' = [for (name, index) in client
   ]
 }]
 
-// Deploy the script to create DNS records in rg-central for all private endpoints
-// Handle App Service (endpointType 'app') separately, as AFD manages it
+// Deploy the script to create DNS records in resource group for all private endpoints
 resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   name: 'create-dns-records-${endpointType}-${uniqueString(resourceGroup().id, deployment().name, subscription().subscriptionId, endpointType)}'
-  location: resourceGroup().location
+  location: location
   kind: 'AzureCLI'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${resourceId('rg-Central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-deployment-scripts')}': {}
+      '${resourceId('rg-${discriminator}-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-${discriminator}-deploy')}': {}
     }
   }
   properties: {
@@ -62,7 +64,7 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       #!/bin/bash
       set -e
 
-      RESOURCE_GROUP="rg-central"
+      RESOURCE_GROUP="$RESOURCE_GROUP"
       DNS_ZONE_NAME="$privateDnsZoneName"
       SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 
@@ -94,10 +96,10 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       ALL_IPS=""
       ALL_FQDNS=""
       for SPOKE in ${clientNames//,/ }; do
-        echo "Checking rg-$SPOKE for $ENDPOINT_TYPE..."
+        echo "Checking rg-$DISCRIMINATOR-$SPOKE for $ENDPOINT_TYPE..."
         # Search for any deployment that starts with extractIp and contains the endpoint type
         EXTRACT_IP_DEPLOYMENT=$(az deployment group list \
-          -g "rg-$SPOKE" \
+          -g "rg-$DISCRIMINATOR-$SPOKE" \
           --query "[?starts_with(name, 'extractIp-${SPOKE}-${ENDPOINT_TYPE}')].name" \
           -o tsv 2>/dev/null | head -1)
         
@@ -108,12 +110,12 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
           
         echo "Found deployment: $EXTRACT_IP_DEPLOYMENT"
         IPS=$(az deployment group show \
-          -g "rg-$SPOKE" \
+          -g "rg-$DISCRIMINATOR-$SPOKE" \
           -n "$EXTRACT_IP_DEPLOYMENT" \
           --query "properties.outputs.privateIps.value" \
           -o tsv 2>/dev/null || echo "")
         FQDNS=$(az deployment group show \
-          -g "rg-$SPOKE" \
+          -g "rg-$DISCRIMINATOR-$SPOKE" \
           -n "$EXTRACT_IP_DEPLOYMENT" \
           --query "properties.outputs.privateFqdns.value" \
           -o tsv 2>/dev/null || echo "")
@@ -185,6 +187,14 @@ resource createDnsRecords 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       {
         name: 'privateDnsZoneName'
         value: privateDnsZoneName
+      }
+      {
+        name: 'DISCRIMINATOR'
+        value: discriminator
+      }
+      {
+        name: 'RESOURCE_GROUP'
+        value: resourceGroup().name
       }
     ]
     timeout: 'PT${timeout}S'

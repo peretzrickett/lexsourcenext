@@ -61,7 +61,7 @@ resource privateDnsLinksToSpoke 'Microsoft.Network/privateDnsZones/virtualNetwor
   location: 'global'
   properties: {
     virtualNetwork: {
-      id: resourceId('rg-${link.clientName}', 'Microsoft.Network/virtualNetworks', 'vnet-${discriminator}-${link.clientName}')
+      id: resourceId('rg-${discriminator}-${link.clientName}', 'Microsoft.Network/virtualNetworks', 'vnet-${discriminator}-${link.clientName}')
     }
     registrationEnabled: false
   }

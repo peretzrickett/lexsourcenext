@@ -31,7 +31,7 @@ param clientSubnets array = []
 param tags object = {}
 
 resource publicIp 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
-  name: 'ip-${name}'
+  name: 'afw-pip-${split(name, '-')[1]}'
   location: location
   sku: {
     name: 'Standard'
@@ -43,7 +43,7 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
 
 // First create a firewall policy that includes the DNS settings
 resource firewallPolicy 'Microsoft.Network/firewallPolicies@2022-05-01' = {
-  name: '${name}-policy'
+  name: 'afwp-${split(name, '-')[1]}'
   location: location
   properties: {
     dnsSettings: {

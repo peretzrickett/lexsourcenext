@@ -15,7 +15,7 @@ param discriminator string
 
 module hubPeering 'vnetHubPeering.bicep' = {
   name: 'hubPeering'
-  scope: resourceGroup('rg-central')
+  scope: resourceGroup('rg-${discriminator}-central')
   params: {
     // centralVnetId: centralVnetId
     // spokeVnetId: spokeVnetId
@@ -26,7 +26,7 @@ module hubPeering 'vnetHubPeering.bicep' = {
 
 module spokePeering 'vnetSpokePeering.bicep' = {
   name: 'spokePeering'
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
   params: {
     // centralVnetId: centralVnetId
     // spokeVnetId: spokeVnetId

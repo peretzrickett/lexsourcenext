@@ -1,12 +1,16 @@
 #!/bin/bash
 
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
+
 # Reset Azure cloud resources while preserving specific resources
 # Preserves:
 # - Key Vaults
 # - Storage Accounts
 # - Managed Identities
 # - vm-network-tester VM and related assets
-# - vnet-lexsb-central
+# - vnet-${DISCRIMINATOR}-central
 
 echo "===== RESET CLOUD OPERATION ====="
 echo "WARNING: This will delete most resources in the current subscription!"
@@ -15,7 +19,7 @@ echo "- Key Vaults (Microsoft.KeyVault/vaults)"
 echo "- Storage Accounts (Microsoft.Storage/storageAccounts)"
 echo "- Managed Identities (Microsoft.ManagedIdentity/userAssignedIdentities)"
 echo "- vm-network-tester VM and related assets"
-echo "- vnet-lexsb-central"
+echo "- vnet-${DISCRIMINATOR}-central"
 echo ""
 
 # Prompt for confirmation
@@ -41,7 +45,7 @@ echo "Cancelling all active deployments..."
 
 # Function to get all resource IDs except specified types and names
 get_resources_to_delete() {
-    az resource list --query "[?type!='Microsoft.KeyVault/vaults' && type!='Microsoft.Storage/storageAccounts' && type!='Microsoft.ManagedIdentity/userAssignedIdentities' && !(name=='vnet-lexsb-central' || contains(name, 'vm-network-tester'))].[id]" -o tsv
+    az resource list --query "[?type!='Microsoft.KeyVault/vaults' && type!='Microsoft.Storage/storageAccounts' && type!='Microsoft.ManagedIdentity/userAssignedIdentities' && !(name=='vnet-${DISCRIMINATOR}-central' || contains(name, 'vm-network-tester'))].[id]" -o tsv
 }
 
 # Function to delete resources from a specified file
@@ -64,7 +68,7 @@ delete_resources_from_file() {
               "$resource_id" == *"storageAccount"* || 
               "$resource_id" == *"ManagedIdentity"* || 
               "$resource_id" == *"network-tester"* || 
-              "$resource_id" == *"vnet-lexsb-central"* ]]; then
+              "$resource_id" == *"vnet-${DISCRIMINATOR}-central"* ]]; then
             echo "Skipping protected resource: $resource_id"
             continue
         fi

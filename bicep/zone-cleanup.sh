@@ -1,7 +1,23 @@
 #!/bin/bash
 
-# Array of resource groups to check
-RESOURCE_GROUPS=(rg-central rg-clienta rg-clientb)
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
+
+# Array of resource groups with discriminator
+RESOURCE_GROUPS=(rg-${DISCRIMINATOR}-central rg-${DISCRIMINATOR}-clienta rg-${DISCRIMINATOR}-clientb)
+
+# List of DNS zones to clean up
+DNS_ZONES=(
+  "privatelink.azurewebsites.net"
+  "privatelink.database.windows.net"
+  "privatelink.monitor.azure.com"
+  "privatelink.vaultcore.azure.net"
+  "privatelink.blob.core.windows.net"
+  "privatelink.file.core.windows.net"
+  "privatelink.insights.azure.com"
+  "privatelink.core.windows.net"
+)
 
 # Maximum concurrent processes per resource group
 MAX_CONCURRENT=2  # Reduced to avoid Azure API rate limiting
@@ -36,116 +52,84 @@ run_az_command() {
     return 1
 }
 
-# Function to process a single resource group
-process_resource_group() {
-    local RG=$1
-    echo "Starting cleanup of Private DNS Zones in resource group $RG..."
-
-    # Check permissions before proceeding
-    check_permissions "$RG"
-
-    # List all Private DNS Zones in the resource group
-    echo "Listing Private DNS Zones in $RG..."
-    ZONES=$(az network private-dns zone list --resource-group "$RG" --query "[].name" -o tsv 2>/dev/null)
-
-    if [[ -z "$ZONES" ]]; then
-        echo "No Private DNS Zones found in $RG."
-        return 0
-    fi
-
-    # Process each zone with limited concurrency
-    jobs=()
-    for ZONE in $ZONES; do
-        (
-            echo "Processing Private DNS Zone: $ZONE in $RG"
-
-            # List and delete all virtual network links for the zone
-            echo "Listing virtual network links for zone $ZONE in $RG..."
-            LINKS=$(az network private-dns link vnet list --resource-group "$RG" --zone-name "$ZONE" --query "[].name" -o tsv 2>/dev/null)
-
-            if [[ -n "$LINKS" ]]; then
-                echo "Deleting virtual network links for zone $ZONE in $RG..."
-                for LINK in $LINKS; do
-                    echo "Attempting to delete link: $LINK"
-                    run_az_command "az network private-dns link vnet delete --resource-group '$RG' --zone-name '$ZONE' --name '$LINK' --yes" || {
-                        echo "Warning: Failed to delete link $LINK in $RG. Trying to force delete..."
-                        run_az_command "az resource delete --resource-group '$RG' --name '$LINK' --resource-type 'Microsoft.Network/privateDnsZones/virtualNetworkLinks' --yes" || {
-                            echo "Error: Could not delete link $LINK in $RG. Check permissions, nested resources, or open a support ticket."
-                        }
-                    }
-                    sleep 2  # Short pause to avoid rate limiting
-                done
-            else
-                echo "No virtual network links found for zone $ZONE in $RG."
-            fi
-
-            # List and delete only A record sets for the zone
-            echo "Listing A record sets for zone $ZONE in $RG..."
-            A_RECORDS=$(az network private-dns record-set a list --resource-group "$RG" --zone-name "$ZONE" --query "[].name" -o tsv 2>/dev/null)
-
-            if [[ -n "$A_RECORDS" ]]; then
-                echo "Deleting A record sets for zone $ZONE in $RG..."
-                for RECORD in $A_RECORDS; do
-                    echo "Deleting A record: $RECORD"
-                    run_az_command "az network private-dns record-set a delete --resource-group '$RG' --zone-name '$ZONE' --name '$RECORD' --yes" || {
-                        echo "Warning: Failed to delete A record $RECORD in $RG. Trying to force delete..."
-                        run_az_command "az resource delete --resource-group '$RG' --name '$RECORD' --resource-type 'Microsoft.Network/privateDnsZones/A' --yes" || {
-                            echo "Error: Could not delete A record $RECORD in $RG. Check permissions, nested resources, or open a support ticket."
-                        }
-                    }
-                    sleep 2  # Short pause to avoid rate limiting
-                done
-            else
-                echo "No A record sets found for zone $ZONE in $RG."
-            fi
-
-            # Wait for links and records to fully delete (increased delay for stability)
-            sleep 10
-
-            # Attempt to delete the Private DNS Zone with force
-            echo "Attempting to delete Private DNS Zone: $ZONE in $RG"
-            run_az_command "az network private-dns zone delete --resource-group '$RG' --name '$ZONE' --yes" || {
-                echo "Error: Failed to delete zone $ZONE in $RG. Trying to force delete..."
-                run_az_command "az resource delete --resource-group '$RG' --name '$ZONE' --resource-type 'Microsoft.Network/privateDnsZones' --yes" || {
-                    echo "Error: Could not delete zone $ZONE in $RG. Check for nested resources, permissions, or open a support ticket."
-                }
-            }
-
-            echo "Completed processing zone $ZONE in $RG"
-        ) &
-
-        # Limit parallel processes to avoid overwhelming Azure API
-        if [ ${#jobs[@]} -ge $MAX_CONCURRENT ]; then
-            wait $jobs[1]  # Wait for the first (oldest) job to complete
-            jobs=(${jobs[@]:1})
-        fi
-        jobs+=( $! )  # Add the new job's PID to the array
+# Function to delete DNS records in a zone
+delete_dns_records() {
+  local RESOURCE_GROUP=$1
+  local DNS_ZONE=$2
+  
+  echo "Checking for DNS zone: $DNS_ZONE in $RESOURCE_GROUP"
+  
+  # Check if zone exists
+  if ! az network private-dns zone show --resource-group "$RESOURCE_GROUP" --name "$DNS_ZONE" --query "name" -o tsv &>/dev/null; then
+    echo "  Zone not found, skipping."
+    return 0
+  fi
+  
+  echo "  Zone found, processing..."
+  
+  # Get all A records
+  local A_RECORDS=$(az network private-dns record-set a list \
+    --resource-group "$RESOURCE_GROUP" \
+    --zone-name "$DNS_ZONE" \
+    --query "[].name" -o tsv 2>/dev/null)
+  
+  if [ -n "$A_RECORDS" ]; then
+    echo "  Found $(echo "$A_RECORDS" | wc -l | tr -d ' ') A records"
+    for RECORD in $A_RECORDS; do
+      echo "  Deleting A record: $RECORD"
+      az network private-dns record-set a delete \
+        --resource-group "$RESOURCE_GROUP" \
+        --zone-name "$DNS_ZONE" \
+        --name "$RECORD" \
+        --yes \
+        --output none \
+        || echo "    Failed to delete A record: $RECORD"
     done
-
-    # Wait for any remaining jobs in this resource group
-    if [ ${#jobs[@]} -gt 0 ]; then
-        wait ${jobs[@]}
-    fi
-
-    echo "Cleanup of Private DNS Zones in $RG completed."
+  else
+    echo "  No A records found"
+  fi
+  
+  # Get all virtual network links
+  local VNET_LINKS=$(az network private-dns link vnet list \
+    --resource-group "$RESOURCE_GROUP" \
+    --zone-name "$DNS_ZONE" \
+    --query "[].name" -o tsv 2>/dev/null)
+  
+  if [ -n "$VNET_LINKS" ]; then
+    echo "  Found $(echo "$VNET_LINKS" | wc -l | tr -d ' ') VNet links"
+    for LINK in $VNET_LINKS; do
+      echo "  Deleting VNet link: $LINK"
+      az network private-dns link vnet delete \
+        --resource-group "$RESOURCE_GROUP" \
+        --zone-name "$DNS_ZONE" \
+        --name "$LINK" \
+        --yes \
+        --output none \
+        || echo "    Failed to delete VNet link: $LINK"
+    done
+  else
+    echo "  No VNet links found"
+  fi
+  
+  # Delete the zone itself
+  echo "  Deleting DNS zone: $DNS_ZONE"
+  az network private-dns zone delete \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$DNS_ZONE" \
+    --yes \
+    --output none \
+    || echo "    Failed to delete DNS zone: $DNS_ZONE"
 }
 
-# Process each resource group in parallel with limited concurrency
-jobs=()
-for RG in "${RESOURCE_GROUPS[@]}"; do
-    process_resource_group "$RG" &
-    jobs+=( $! )  # Store the PID of the background process
+# Main processing
+echo "Starting DNS zone cleanup..."
 
-    # Limit parallel resource groups to avoid overwhelming Azure API (e.g., 2 concurrent RGs)
-    if [ ${#jobs[@]} -ge 2 ]; then
-        wait $jobs[1]  # Wait for the first (oldest) job to complete
-        jobs=(${jobs[@]:1})
-    fi
+# Process the central resource group first
+CENTRAL_RG="${RESOURCE_GROUPS[0]}"
+echo "Processing central resource group: $CENTRAL_RG"
+
+for ZONE in "${DNS_ZONES[@]}"; do
+  delete_dns_records "$CENTRAL_RG" "$ZONE"
 done
 
-# Wait for all remaining background processes
-if [ ${#jobs[@]} -gt 0 ]; then
-    wait ${jobs[@]}
-fi
-
-echo "Cleanup of all Private DNS Zones completed."
+echo "Cleanup completed."

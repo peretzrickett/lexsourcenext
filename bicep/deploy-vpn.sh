@@ -16,9 +16,12 @@ CERT_NAME="P2SRootCert"
 CLIENT_CERT_NAME="P2SClientCert"
 CERT_PASSWORD="Password1!"  # Change this in production
 LOCATION="eastus"
-DISCRIMINATOR="lexsb"
+DISCRIMINATOR=${1:-"lexsb"}
 KV_NAME="kv-lexsb-central"
 FORCE_REGEN=false
+
+# Central resource group name
+CENTRAL_RG="rg-${DISCRIMINATOR}-central"
 
 # Function to display usage
 function display_usage {
@@ -191,22 +194,21 @@ else
   fi
 fi
 
-# Get the managed identity ID
-echo -e "${YELLOW}Retrieving managed identity for deployment...${NC}"
-MANAGED_IDENTITY_ID=$(az identity list --resource-group rg-central --query "[?contains(name, 'uami-deployment-scripts')].id" -o tsv)
+# Create or retrieve managed identity for automation
+info_echo "Checking managed identity for automation..."
+MANAGED_IDENTITY_ID=$(az identity list --resource-group ${CENTRAL_RG} --query "[?contains(name, 'uami-${DISCRIMINATOR}-deploy')].id" -o tsv)
 
 if [ -z "$MANAGED_IDENTITY_ID" ]; then
-  echo -e "${YELLOW}Creating a new managed identity for deployment scripts...${NC}"
-  MANAGED_IDENTITY_ID=$(az identity create --name uami-deployment-scripts --resource-group rg-central --query id -o tsv)
+  info_echo "Creating managed identity 'uami-${DISCRIMINATOR}-deploy' in resource group $CENTRAL_RG"
+  MANAGED_IDENTITY_ID=$(az identity create --name uami-${DISCRIMINATOR}-deploy --resource-group ${CENTRAL_RG} --query id -o tsv)
   
-  # Assign contributor role to the managed identity
-  SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-  az role assignment create --assignee-object-id $(az identity show --name uami-deployment-scripts --resource-group rg-central --query principalId -o tsv) \
+  info_echo "Assigning 'Contributor' role to the managed identity at subscription scope..."
+  az role assignment create --assignee-object-id $(az identity show --name uami-${DISCRIMINATOR}-deploy --resource-group ${CENTRAL_RG} --query principalId -o tsv) \
     --role Contributor \
-    --scope /subscriptions/$SUBSCRIPTION_ID
-  
-  # Add KV access policy for the managed identity
-  MANAGED_IDENTITY_PRINCIPAL_ID=$(az identity show --name uami-deployment-scripts --resource-group rg-central --query principalId -o tsv)
+    --scope /subscriptions/${SUBSCRIPTION_ID}
+    
+  # Configure Key Vault access policy for the managed identity
+  MANAGED_IDENTITY_PRINCIPAL_ID=$(az identity show --name uami-${DISCRIMINATOR}-deploy --resource-group ${CENTRAL_RG} --query principalId -o tsv)
   az keyvault set-policy --name $KV_NAME \
     --object-id $MANAGED_IDENTITY_PRINCIPAL_ID \
     --certificate-permissions get list \
@@ -218,7 +220,7 @@ fi
 
 # Check if VPN Gateway already exists
 VPN_GW_NAME="vpngw-$DISCRIMINATOR"
-VPN_GW_EXISTS=$(az network vnet-gateway list --resource-group rg-central --query "[?name=='$VPN_GW_NAME']" -o tsv | wc -l)
+VPN_GW_EXISTS=$(az network vnet-gateway list --resource-group ${CENTRAL_RG} --query "[?name=='$VPN_GW_NAME']" -o tsv | wc -l)
 
 if [ "$VPN_GW_EXISTS" -gt 0 ]; then
   echo -e "${YELLOW}VPN Gateway $VPN_GW_NAME already exists. Updating root certificate...${NC}"
@@ -226,7 +228,7 @@ if [ "$VPN_GW_EXISTS" -gt 0 ]; then
   # Update the root certificate directly on the VPN Gateway
   # First, check if the certificate already exists
   EXISTING_CERT=$(az network vnet-gateway show \
-    --resource-group rg-central \
+    --resource-group ${CENTRAL_RG} \
     --name $VPN_GW_NAME \
     --query "vpnClientConfiguration.vpnClientRootCertificates[?name=='$CERT_NAME'].name" -o tsv)
   
@@ -241,7 +243,7 @@ if [ "$VPN_GW_EXISTS" -gt 0 ]; then
   echo -e "${YELLOW}Checking if VPN Gateway certificate matches Key Vault...${NC}"
   
   CURRENT_CERT=$(az network vnet-gateway show \
-    --resource-group rg-central \
+    --resource-group ${CENTRAL_RG} \
     --name $VPN_GW_NAME \
     --query "vpnClientConfiguration.vpnClientRootCertificates[?name=='$CERT_NAME'].publicCertData" -o tsv)
   
@@ -252,7 +254,7 @@ if [ "$VPN_GW_EXISTS" -gt 0 ]; then
     
     # First, check if there are multiple certificates
     CERT_COUNT=$(az network vnet-gateway show \
-      --resource-group rg-central \
+      --resource-group ${CENTRAL_RG} \
       --name $VPN_GW_NAME \
       --query "length(vpnClientConfiguration.vpnClientRootCertificates)" -o tsv)
     
@@ -303,7 +305,7 @@ BICEPEOF
       # Deploy the bicep file to update the certificate
       echo -e "${YELLOW}Deploying certificate update...${NC}"
       az deployment group create \
-        --resource-group rg-central \
+        --resource-group ${CENTRAL_RG} \
         --template-file "$TEMP_DIR/update-vpn-cert.bicep" \
         --parameters rootCertData="$ROOT_CERT_DATA" rootCertName="$CERT_NAME" \
         --name "update-vpn-cert-$(date +%Y%m%d%H%M%S)"
@@ -316,7 +318,7 @@ BICEPEOF
       
       # Add the new certificate
       az network vnet-gateway root-cert create \
-        --resource-group rg-central \
+        --resource-group ${CENTRAL_RG} \
         --gateway-name $VPN_GW_NAME \
         --name "$CERT_NAME-$(date +%s)" \
         --public-cert-data "$ROOT_CERT_DATA"
@@ -328,7 +330,7 @@ BICEPEOF
   # Download the VPN client configuration package
   echo -e "${YELLOW}Generating VPN client configuration package...${NC}"
   CLIENT_PACKAGE_URL=$(az network vnet-gateway vpn-client generate \
-    --resource-group rg-central \
+    --resource-group ${CENTRAL_RG} \
     --name $VPN_GW_NAME \
     --authentication-method EAPTLS \
     -o tsv)
@@ -341,7 +343,7 @@ else
   DEPLOY_NAME="vpn-deployment-$(date +%Y%m%d%H%M%S)"
   
   az deployment group create \
-    --resource-group rg-central \
+    --resource-group ${CENTRAL_RG} \
     --template-file modules/vpn.bicep \
     --name $DEPLOY_NAME \
     --parameters \
@@ -357,7 +359,7 @@ else
   echo -e "${GREEN}VPN Gateway deployment initiated.${NC}"
   echo -e "${YELLOW}The deployment may take 30-45 minutes to complete.${NC}"
   echo -e "${YELLOW}You can check the status with:${NC}"
-  echo -e "${YELLOW}az deployment group show --resource-group rg-central --name $DEPLOY_NAME${NC}"
+  echo -e "${YELLOW}az deployment group show --resource-group ${CENTRAL_RG} --name $DEPLOY_NAME${NC}"
   
   # Monitor deployment with timeout
   echo -e "${YELLOW}Monitoring deployment status (with 45-minute timeout)...${NC}"
@@ -373,12 +375,12 @@ else
     if [ $ELAPSED -gt $TIMEOUT ]; then
       echo -e "${YELLOW}Monitoring timed out after 45 minutes. Deployment is still running.${NC}"
       echo -e "${YELLOW}You can check the status manually:${NC}"
-      echo -e "${YELLOW}az deployment group show --resource-group rg-central --name $DEPLOY_NAME${NC}"
+      echo -e "${YELLOW}az deployment group show --resource-group ${CENTRAL_RG} --name $DEPLOY_NAME${NC}"
       IS_COMPLETE=true
       continue
     fi
     
-    STATUS=$(az deployment group show --resource-group rg-central --name $DEPLOY_NAME --query "properties.provisioningState" -o tsv 2>/dev/null)
+    STATUS=$(az deployment group show --resource-group ${CENTRAL_RG} --name $DEPLOY_NAME --query "properties.provisioningState" -o tsv 2>/dev/null)
     
     if [ $? -ne 0 ]; then
       echo -e "${YELLOW}Error checking deployment status, retrying...${NC}"
@@ -394,7 +396,7 @@ else
         # Download the VPN client configuration package
         echo -e "${YELLOW}Generating VPN client configuration package...${NC}"
         CLIENT_PACKAGE_URL=$(az network vnet-gateway vpn-client generate \
-          --resource-group rg-central \
+          --resource-group ${CENTRAL_RG} \
           --name $VPN_GW_NAME \
           --authentication-method EAPTLS \
           -o tsv)
@@ -405,7 +407,7 @@ else
       "Failed")
         echo -e "${RED}Deployment failed!${NC}"
         echo -e "${YELLOW}Check the deployment for errors:${NC}"
-        echo -e "${YELLOW}az deployment group show --resource-group rg-central --name $DEPLOY_NAME${NC}"
+        echo -e "${YELLOW}az deployment group show --resource-group ${CENTRAL_RG} --name $DEPLOY_NAME${NC}"
         IS_COMPLETE=true
         ;;
       *)

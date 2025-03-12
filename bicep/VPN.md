@@ -11,6 +11,21 @@ The VPN solution provides secure access to resources deployed in the private net
 3. Creating and configuring VPN client configuration packages
 4. Establishing connectivity to the private network with proper routing
 
+## Discriminator Parameter
+
+> **IMPORTANT:** All VPN-related operations require the discriminator parameter. The discriminator is a short string that uniquely identifies your environment and is used in resource group and resource naming.
+
+- The VPN Gateway is deployed with the name pattern: `vpngw-{discriminator}`
+- Key Vault follows the pattern: `kv-{discriminator}-central`
+- The central resource group is: `rg-{discriminator}-central`
+
+All commands in this document should be run with your specific discriminator to target the correct resources. If no discriminator is specified, the default "lexsb" is used.
+
+Example:
+```bash
+./deploy-vpn.sh myenv  # Uses "myenv" as the discriminator
+```
+
 ## Deployment
 
 The VPN Gateway is deployed automatically as part of the main Bicep deployment unless specifically disabled.
@@ -19,6 +34,7 @@ The VPN Gateway is deployed automatically as part of the main Bicep deployment u
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
+| `discriminator` | Unique identifier for the environment | `lexsb` |
 | `deployVpn` | Whether to deploy the VPN Gateway | `true` |
 | `vpnRootCertName` | Certificate name for VPN authentication | `P2SRootCert` |
 | `vpnRootCertData` | Certificate data (base64-encoded .cer file) | Auto-generated if empty |
@@ -28,7 +44,7 @@ The VPN Gateway is deployed automatically as part of the main Bicep deployment u
 **Option 1: Automatic Certificate Generation**
 
 ```bash
-./go.sh
+./go.sh myenv  # Where myenv is your discriminator
 ```
 
 The deployment will automatically:
@@ -46,12 +62,20 @@ openssl req -new -key P2SRootCert.key -out P2SRootCert.csr -subj "/CN=P2SRootCer
 openssl x509 -req -days 3650 -in P2SRootCert.csr -signkey P2SRootCert.key -out P2SRootCert.cer
 BASE64_CERT=$(base64 -i P2SRootCert.cer | tr -d '\n')
 
-# Deploy with your certificate
+# Deploy with your certificate and discriminator
 az deployment sub create \
   --location eastus \
   --template-file main.bicep \
   --parameters @clients.json \
-  --parameters vpnRootCertData=$BASE64_CERT
+  --parameters discriminator=myenv vpnRootCertData=$BASE64_CERT
+```
+
+**Option 3: VPN-Only Deployment**
+
+If you want to deploy or update only the VPN Gateway, use:
+
+```bash
+./deploy-vpn.sh myenv  # Where myenv is your discriminator
 ```
 
 ## Connecting to the VPN
@@ -61,17 +85,26 @@ az deployment sub create \
 After deployment, retrieve the VPN client configuration package URL:
 
 ```bash
-# Get Resource Group name
-RG_NAME="rg-central"
+# Specify your discriminator (default is "lexsb" if not specified)
+DISCRIMINATOR=${1:-"lexsb"}
 
-# Get VPN Gateway name
-VPN_GW_NAME=$(az network vnet-gateway list --resource-group $RG_NAME --query "[0].name" -o tsv)
+# Get Resource Group name using the discriminator
+RG_NAME="rg-${DISCRIMINATOR}-central"
+
+# Get VPN Gateway name using the discriminator
+VPN_GW_NAME="vpngw-${DISCRIMINATOR}"
 
 # Download VPN client configuration
 az network vnet-gateway vpn-client generate \
   --resource-group $RG_NAME \
   --name $VPN_GW_NAME \
   --authentication-method EAPTLS
+```
+
+Alternatively, use the provided helper script:
+
+```bash
+./get-vpn-cert.sh myenv  # Where myenv is your discriminator
 ```
 
 ### 2. Install the VPN Client
@@ -128,11 +161,16 @@ Developers should connect to the VPN to:
 
 3. **Gateway Status**:
    ```bash
+   DISCRIMINATOR=myenv  # Replace with your discriminator
    az network vnet-gateway show \
-     --resource-group rg-central \
-     --name vpngw-<discriminator> \
+     --resource-group rg-${DISCRIMINATOR}-central \
+     --name vpngw-${DISCRIMINATOR} \
      --query "provisioningState"
    ```
+
+4. **Wrong Discriminator**:
+   - If you're targeting the wrong resources, verify you're using the correct discriminator
+   - Use `./inspect-rgs.sh myenv` to see what resource groups exist for your discriminator
 
 ## Security Considerations
 
@@ -141,3 +179,20 @@ Developers should connect to the VPN to:
 * Client certificates should be kept secure and not shared
 * Certificate can be revoked if compromised
 * VPN access is logged and can be monitored in Azure Monitor
+
+## Multiple Environment Management
+
+With the discriminator pattern, you can have multiple VPN Gateways in parallel for different environments:
+
+```bash
+# Deploy production VPN
+./deploy-vpn.sh prod
+
+# Deploy development VPN
+./deploy-vpn.sh dev
+
+# Get certificates for specific environment
+./get-vpn-cert.sh test
+```
+
+Each environment will have its own certificates stored in the respective Key Vault (`kv-prod-central`, `kv-dev-central`, etc.).

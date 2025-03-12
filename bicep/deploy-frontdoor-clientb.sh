@@ -6,10 +6,13 @@ set -e
 
 echo "=== Creating Front Door components for ClientB ==="
 
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
+
 # Configuration
-RESOURCE_GROUP="rg-central"
-FRONTDOOR_NAME="globalFrontDoor"
-DISCRIMINATOR="lexsb"
+RESOURCE_GROUP="rg-${DISCRIMINATOR}-central"
+FRONTDOOR_NAME="afd-${DISCRIMINATOR}"
 CLIENT="ClientB"
 SUBSCRIPTION_ID="ed42d05a-0eb7-4618-b08d-495f9f21ab85"
 
@@ -19,7 +22,7 @@ ORIGIN_NAME="afd-o-${DISCRIMINATOR}-${CLIENT}"
 ENDPOINT_NAME="afd-ep-${DISCRIMINATOR}-${CLIENT}"
 ROUTE_NAME="afd-rt-${DISCRIMINATOR}-${CLIENT}"
 ORIGIN_HOST="app-${DISCRIMINATOR}-${CLIENT}.azurewebsites.net"
-CLIENT_RG="rg-${CLIENT}"
+CLIENT_RG="rg-${DISCRIMINATOR}-${CLIENT}"
 APP_NAME="app-${DISCRIMINATOR}-${CLIENT}"
 
 # Ensure subscription is set
@@ -51,14 +54,13 @@ else
     --resource-group "$RESOURCE_GROUP" \
     --profile-name "$FRONTDOOR_NAME" \
     --origin-group-name "$ORIGIN_GROUP" \
-    --probe-request-type HEAD \
+    --probe-request-type GET \
     --probe-protocol Http \
     --probe-interval-in-seconds 100 \
+    --probe-path "/" \
     --sample-size 4 \
     --successful-samples-required 3 \
-    --probe-path "/" \
-    --additional-latency-in-milliseconds 50 \
-    --session-affinity-state Disabled
+    --additional-latency-in-milliseconds 50
   
   echo "Origin group created successfully."
 fi
@@ -88,7 +90,7 @@ else
     --private-link-location "eastus" \
     --private-link-resource "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${CLIENT_RG}/providers/Microsoft.Web/sites/${APP_NAME}" \
     --private-link-sub-resource-type "sites" \
-    --private-link-request-message "AFD App Service origin Private Link request." \
+    --private-link-request-message "Front Door Private Link request" \
     --enforce-certificate-name-check true
   
   echo "Origin created successfully."

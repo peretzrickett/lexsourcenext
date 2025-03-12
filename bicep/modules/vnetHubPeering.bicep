@@ -13,7 +13,7 @@ resource centralVnet 'Microsoft.Network/virtualNetworks@2022-09-01' existing = {
 var spokeVnetName = 'vnet-${discriminator}-${clientName}'
 // Extract the spoke VNet base name
 //var spokeVnetBaseName = last(split(spokeVnetId, '-'))
-var spokeVnetRg = 'rg-${clientName}'
+var spokeVnetRg = 'rg-${discriminator}-${clientName}'
 
 // Extract the spoke VNet resource group
 //var spokeVnetResourceGroup = split(spokeVnetId, '/')[4] // Resource group name is at index 4

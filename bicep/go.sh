@@ -1,12 +1,41 @@
 #!/bin/bash
 
+# Deployment script for Azure infrastructure using Bicep
+# Usage: ./go.sh [discriminator]
+# Example: ./go.sh dev    # Deploys using "dev" as the discriminator
+
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
+
 # File paths
 TEMPLATE_FILE="main.bicep"
 PARAMS_FILE="clients.json"
 OUTPUT_FILE="errors.json"
 WINNER_SOUND="dingding.mp3"  # Example winner sound (adjust path)
 LOSER_SOUND="nocigar.mp3"  # Example loser sound (adjust path)
-DEPLOYMENT_NAME="bicep-$(date +%Y%m%d%H%M%S)"
+DEPLOYMENT_NAME="bicep-${DISCRIMINATOR}-$(date +%Y%m%d%H%M%S)"
+
+# Function to display usage instructions
+display_usage() {
+    echo ""
+    echo "Usage: $0 [discriminator]"
+    echo ""
+    echo "Parameters:"
+    echo "  discriminator    Short string used in resource naming (default: lexsb)"
+    echo ""
+    echo "Examples:"
+    echo "  $0               # Uses default discriminator 'lexsb'"
+    echo "  $0 dev           # Uses 'dev' as the discriminator" 
+    echo "  $0 prod          # Uses 'prod' as the discriminator"
+    echo ""
+}
+
+# If --help or -h parameter is provided, show usage
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    display_usage
+    exit 0
+fi
 
 # Function to play sound (uses macOS afplay, fallback to other players)
 play_sound() {
@@ -68,7 +97,7 @@ fi
 
 # First validate the template
 echo "Validating template..."
-VALIDATION_OUTPUT=$(az deployment sub validate --location eastus --template-file "$TEMPLATE_FILE" --parameters "@$PARAMS_FILE" 2>&1)
+VALIDATION_OUTPUT=$(az deployment sub validate --location eastus --template-file "$TEMPLATE_FILE" --parameters discriminator=$DISCRIMINATOR @"$PARAMS_FILE" 2>&1)
 VALIDATION_STATUS=$?
 
 if [ $VALIDATION_STATUS -ne 0 ]; then
@@ -95,7 +124,7 @@ if command -v timeout &> /dev/null; then
         --name "$DEPLOYMENT_NAME" \
         --location eastus \
         --template-file "$TEMPLATE_FILE" \
-        --parameters "@$PARAMS_FILE" \
+        --parameters discriminator=$DISCRIMINATOR @"$PARAMS_FILE" \
         2>&1 | tee deployment_output.log
 else
     # Use a background job with trap for clean termination
@@ -119,7 +148,7 @@ else
         --name "$DEPLOYMENT_NAME" \
         --location eastus \
         --template-file "$TEMPLATE_FILE" \
-        --parameters "@$PARAMS_FILE" \
+        --parameters discriminator=$DISCRIMINATOR @"$PARAMS_FILE" \
         > deployment_output.log 2>&1 &
     DEPLOYMENT_PID=$!
     

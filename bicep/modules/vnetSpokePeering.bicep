@@ -12,7 +12,7 @@ resource spokeVnet 'Microsoft.Network/virtualNetworks@2022-09-01' existing = {
 // // Extract the spoke VNet resource group
 // var hubVnetResourceGroup = split(centralVnetId, '/')[4] // Resource group name is at index 4
 
-var hubVnetRg = 'rg-central'
+var hubVnetRg = 'rg-${discriminator}-central'
 var hubVnetName = 'vnet-${discriminator}-Central'
 
 resource spokeToHubPeerings 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2022-09-01' = {

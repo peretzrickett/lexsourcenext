@@ -4,13 +4,13 @@
 param location string
 
 @description('Name of the global Azure Firewall resource')
-param firewallName string = 'globalFirewall'
+param firewallName string = 'afw-${discriminator}'
 
 @description('Name of the global Azure Front Door resource')
-param frontDoorName string = 'globalFrontDoor'
+param frontDoorName string = 'afd-${discriminator}'
 
 @description('Name of the global Sentinel (Log Analytics) workspace')
-param sentinelWorkspaceName string = 'globalSentinelWorkspace'
+param sentinelWorkspaceName string = 'saw-${discriminator}'
 
 @description('CIDR block for the central VNet')
 param centralVNetCidr string = '10.0.0.0/16'
@@ -92,7 +92,7 @@ module frontdoor 'frontDoor.bicep' = {
 // Deploy Route Table for routing traffic through the firewall
 // Note: We do NOT apply this to the GatewaySubnet to allow VPN traffic to bypass firewall
 resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
-  name: 'RouteTable'
+  name: 'rt-${discriminator}'
   location: location
   properties: {
     routes: [

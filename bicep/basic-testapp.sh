@@ -1,11 +1,15 @@
 #!/bin/bash
 
-# Basic test app deployment script
-# This script creates an extremely basic index.html and deploys it directly to the App Service
+# Simple test app deployment script for a basic HTML page
 
 # Variables
-RESOURCE_GROUP="rg-ClientB"
-APP_NAME="app-lexsb-ClientB"
+CLIENT_NAME="ClientB"
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
+
+RESOURCE_GROUP="rg-${DISCRIMINATOR}-${CLIENT_NAME}"
+APP_NAME="app-${DISCRIMINATOR}-${CLIENT_NAME}"
 
 # Check if App Service exists
 echo "Checking if app service $APP_NAME exists in resource group $RESOURCE_GROUP..."
@@ -15,58 +19,106 @@ if [ -z "$APP_EXISTS" ]; then
   exit 1
 fi
 
-# Create a temporary directory
-TEMP_DIR=$(mktemp -d)
-echo "Created temporary directory: $TEMP_DIR"
+# Enable public network access
+echo "Enabling public network access for the app service..."
+az webapp update --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --set publicNetworkAccess=Enabled
 
-# Create the most basic index.html possible
-echo "Creating basic index.html..."
-cat > "$TEMP_DIR/index.html" << EOF
+# Enable SCM site access
+echo "Enabling SCM site access..."
+az webapp config access-restriction show --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --query scm -o json
+az webapp config access-restriction add --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" \
+  --rule-name "Allow All SCM" --action Allow --ip-address "0.0.0.0/0" --priority 100 --scm-site
+
+# Create temporary folder
+echo "Creating temporary deployment folder..."
+TEMP_DIR="basic_deploy_temp"
+mkdir -p $TEMP_DIR/wwwroot
+
+# Create simple HTML file
+echo "Creating basic HTML test page..."
+cat > $TEMP_DIR/wwwroot/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Basic Test</title>
+    <title>Basic Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.8em;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello World</h1>
-    <p>If you can see this, the web app is working.</p>
-    <p>Generated at: $(date)</p>
+    <div class="container">
+        <h1>Hello from Azure App Service!</h1>
+        <p class="success">✓ Connection Successful</p>
+        <p>This is a basic HTML page served from Azure App Service.</p>
+        <p>Current timestamp: <span class="timestamp">DATE_PLACEHOLDER</span></p>
+        <hr>
+        <p>Page deployed using a simple shell script</p>
+    </div>
+    <script>
+        // Update timestamp with browser's current time
+        document.querySelector('.timestamp').textContent = new Date().toLocaleString();
+    </script>
 </body>
 </html>
 EOF
 
-# Create a minimal web.config
-echo "Creating basic web.config..."
-cat > "$TEMP_DIR/web.config" << EOF
+# Create web.config for proper routing
+echo "Creating web.config file..."
+cat > $TEMP_DIR/wwwroot/web.config << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <system.webServer>
-    <directoryBrowse enabled="true" />
-    <defaultDocument>
-      <files>
-        <add value="index.html" />
-      </files>
-    </defaultDocument>
+    <staticContent>
+      <mimeMap fileExtension=".html" mimeType="text/html" />
+    </staticContent>
+    <rewrite>
+      <rules>
+        <rule name="Root Hit Redirect" stopProcessing="true">
+          <match url="^$" />
+          <action type="Redirect" url="/index.html" />
+        </rule>
+      </rules>
+    </rewrite>
   </system.webServer>
 </configuration>
 EOF
 
-# Deploy files directly using FTP
-echo "Deploying files directly using az webapp deploy..."
-pushd "$TEMP_DIR"
-zip -r ../basicapp.zip .
-popd
+# Create zip package
+echo "Creating deployment package..."
+cd $TEMP_DIR
+zip -r ../basic-testapp.zip wwwroot
+cd ..
 
-# Use direct ZIP deployment to the App Service
-echo "Using ZIP deployment..."
-az webapp deployment source config-zip --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --src basicapp.zip
+# Deploy to App Service
+echo "Deploying to App Service using ZIP deploy..."
+az webapp deploy --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --src-path "basic-testapp.zip" --type zip
 
-# Clean up
-echo "Cleaning up..."
-rm -rf "$TEMP_DIR"
-rm -f basicapp.zip
+# Cleanup
+echo "Cleaning up temporary files..."
+rm -rf $TEMP_DIR
+rm -f basic-testapp.zip
 
-echo "Deployment completed!"
-echo "App should be accessible at: https://$APP_NAME.azurewebsites.net"
-echo "Testing connectivity:"
-curl -k https://$APP_NAME.azurewebsites.net 
+echo "Deployment completed successfully!"
+echo "App should be accessible at: https://$APP_NAME.azurewebsites.net" 

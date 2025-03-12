@@ -18,7 +18,7 @@ param discriminator string
 // Deploy VNet for the spoke network
 module spokeVnet 'vnet.bicep' = {
   name: 'vnet-${discriminator}-${clientName}'
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
   params: {
     name: clientName
     location: location
@@ -36,7 +36,7 @@ module spokeVnet 'vnet.bicep' = {
 // Deploy App Service Plan for the client
 module appServicePlan 'appServicePlan.bicep' = {
   name: 'asp-${discriminator}-${clientName}'
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
   params: {
     name: 'asp-${discriminator}-${clientName}'
     location: location
@@ -55,7 +55,7 @@ module appServicePlan 'appServicePlan.bicep' = {
 // Deploy App Service (use FrontEnd subnet for vnetIntegration, remove private endpoint)
 module appService 'appService.bicep' = {
   name: 'app-${discriminator}-${clientName}'
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
   params: {
     clientName: clientName
     discriminator: discriminator
@@ -66,7 +66,7 @@ module appService 'appService.bicep' = {
 
 // Deploy SQL Server (keep private endpoint, uses PrivateLink subnet)
 module sqlServer 'sqlServer.bicep' = {
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
   name: 'sql-${discriminator}-${clientName}'
   params: {
     clientName: clientName
@@ -82,7 +82,7 @@ module sqlServer 'sqlServer.bicep' = {
 // Deploy Storage Account (keep private endpoint, uses PrivateLink subnet)
 module storageAccount 'storageAccount.bicep' = {
   name: 'stg${discriminator}${clientName}'
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
   params: {
     clientName: clientName
     discriminator: discriminator
@@ -95,7 +95,7 @@ module storageAccount 'storageAccount.bicep' = {
 // Deploy Key Vault (keep private endpoint, uses PrivateLink subnet)
 module keyVault 'keyVault.bicep' = {
   name: 'pkv-${discriminator}-${clientName}'
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
   params: {
     clientName: clientName
     discriminator: discriminator
@@ -108,7 +108,7 @@ module keyVault 'keyVault.bicep' = {
 // Deploy App Insights (keep private endpoint, uses PrivateLink subnet)
 module appInsights 'appInsights.bicep' = {
   name: 'pai-${discriminator}-${clientName}'
-  scope: resourceGroup('rg-${clientName}')
+  scope: resourceGroup('rg-${discriminator}-${clientName}')
   params: {
     discriminator: discriminator
     enablePrivateLinkScope: true

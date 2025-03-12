@@ -1,101 +1,108 @@
 #!/bin/bash
 
-# Simple test app deployment script
-# This script deploys a simple HTML page to the App Service
+# Configuration variables
+CLIENT_NAME="ClientB"
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-"lexsb"}
+echo "Using discriminator: $DISCRIMINATOR"
 
-# Variables
-RESOURCE_GROUP="rg-ClientB"
-APP_NAME="app-lexsb-ClientB"
+RESOURCE_GROUP="rg-${DISCRIMINATOR}-${CLIENT_NAME}"
+LOCATION="eastus"
+APP_SERVICE_PLAN="asp-${DISCRIMINATOR}-${CLIENT_NAME}"
+APP_SERVICE="app-${DISCRIMINATOR}-${CLIENT_NAME}"
+BRANCH="main"
+
+# Define colors for console output
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Function to check Azure CLI
+check_az() {
+    if ! command -v az &> /dev/null; then
+        echo -e "${RED}Azure CLI not found. Please install it and run 'az login'.${NC}"
+        exit 1
+    fi
+    
+    if ! az account show &> /dev/null; then
+        echo -e "${RED}Not logged in to Azure. Please run 'az login' first.${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}Azure CLI check passed.${NC}"
+}
+
+# Function to check App Service existence
+check_app_service() {
+    if az webapp show --name "$APP_SERVICE" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
+        echo -e "${GREEN}App Service $APP_SERVICE exists.${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}App Service $APP_SERVICE does not exist.${NC}"
+        return 1
+    fi
+}
+
+# Function to stop App Service
+stop_app_service() {
+    echo -e "${YELLOW}Stopping App Service $APP_SERVICE...${NC}"
+    az webapp stop --name "$APP_SERVICE" --resource-group "$RESOURCE_GROUP"
+    echo -e "${GREEN}App Service stopped.${NC}"
+}
+
+# Function to start App Service
+start_app_service() {
+    echo -e "${YELLOW}Starting App Service $APP_SERVICE...${NC}"
+    az webapp start --name "$APP_SERVICE" --resource-group "$RESOURCE_GROUP"
+    echo -e "${GREEN}App Service started.${NC}"
+}
+
+# Function to deploy code from GitHub
+deploy_code() {
+    echo -e "${YELLOW}Deploying code to App Service $APP_SERVICE...${NC}"
+    
+    # Set up deployment source
+    az webapp deployment source config --name "$APP_SERVICE" \
+                                      --resource-group "$RESOURCE_GROUP" \
+                                      --repo-url "https://github.com/azure-samples/nodejs-docs-hello-world" \
+                                      --branch "$BRANCH" \
+                                      --manual-integration
+    
+    echo -e "${GREEN}Deployment source configured.${NC}"
+    
+    # Trigger deployment
+    az webapp deployment source sync --name "$APP_SERVICE" \
+                                    --resource-group "$RESOURCE_GROUP"
+    
+    echo -e "${GREEN}Code deployed successfully.${NC}"
+}
+
+# Main script execution
+echo -e "${YELLOW}=== Starting Simple Test App Deployment ===${NC}"
+
+# Check Azure CLI
+check_az
 
 # Check if App Service exists
-echo "Checking if app service $APP_NAME exists in resource group $RESOURCE_GROUP..."
-APP_EXISTS=$(az webapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "name" -o tsv 2>/dev/null)
-if [ -z "$APP_EXISTS" ]; then
-  echo "App service $APP_NAME not found in resource group $RESOURCE_GROUP. Exiting."
-  exit 1
+if check_app_service; then
+    # Stop App Service
+    stop_app_service
+    
+    # Deploy code
+    deploy_code
+    
+    # Start App Service
+    start_app_service
+else
+    echo -e "${RED}App Service does not exist. Please create it first.${NC}"
+    echo -e "${YELLOW}You can create it using the Azure Portal or Azure CLI.${NC}"
+    exit 1
 fi
 
-# Create temporary folder
-echo "Creating temporary deployment folder..."
-TEMP_DIR="simple_deploy_temp"
-mkdir -p $TEMP_DIR/wwwroot
+# Get the app URL
+APP_URL="https://$APP_SERVICE.azurewebsites.net"
+echo -e "${GREEN}Deployment complete. The app should be available at:${NC}"
+echo -e "${YELLOW}$APP_URL${NC}"
 
-# Create simple HTML file
-echo "Creating basic HTML test page..."
-cat > $TEMP_DIR/wwwroot/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Simple Test Page</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            line-height: 1.6;
-            background-color: #f0f0f0;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: white;
-        }
-        .timestamp {
-            color: #666;
-            font-size: 0.8em;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Hello from Azure App Service!</h1>
-        <p>This is a simple test page to verify direct connectivity to the App Service.</p>
-        <p>If you can see this page, the App Service is accessible directly.</p>
-        <p class="timestamp">Page generated at: $(date)</p>
-    </div>
-</body>
-</html>
-EOF
-
-# Create web.config file for proper routing
-echo "Creating web.config file..."
-cat > $TEMP_DIR/wwwroot/web.config << 'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <system.webServer>
-    <staticContent>
-      <mimeMap fileExtension=".html" mimeType="text/html" />
-    </staticContent>
-    <rewrite>
-      <rules>
-        <rule name="Root Hit Redirect" stopProcessing="true">
-          <match url="^$" />
-          <action type="Redirect" url="/index.html" />
-        </rule>
-      </rules>
-    </rewrite>
-  </system.webServer>
-</configuration>
-EOF
-
-# Create zip package for deployment
-echo "Creating deployment package..."
-cd $TEMP_DIR
-zip -r ../simple-testapp.zip wwwroot
-cd ..
-
-# Deploy directly to App Service using ZIP deploy
-echo "Deploying to App Service using ZIP deploy..."
-az webapp deployment source config-zip --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --src "simple-testapp.zip"
-
-# Cleanup
-echo "Cleaning up..."
-rm -rf $TEMP_DIR
-rm -f simple-testapp.zip
-
-echo "Deployment completed!"
-echo "App should be accessible at: https://$APP_NAME.azurewebsites.net"
-echo "Testing connectivity:"
-curl -k https://$APP_NAME.azurewebsites.net 
+echo -e "${GREEN}=== Deployment Complete ===${NC}" 

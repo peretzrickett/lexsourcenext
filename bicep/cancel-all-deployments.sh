@@ -1,7 +1,19 @@
 #!/bin/bash
 
 # Script to forcibly cancel all active deployments at subscription level
-echo "Cancelling all active subscription-level deployments..."
+# Usage: ./cancel-all-deployments.sh [discriminator]
+# If discriminator is provided, only cancels deployments in resource groups
+# with that discriminator
+
+# Get discriminator from command line argument or use default
+DISCRIMINATOR=${1:-""}
+if [ -n "$DISCRIMINATOR" ]; then
+    echo "Using discriminator: $DISCRIMINATOR"
+    echo "Will only cancel deployments in resource groups with prefix rg-${DISCRIMINATOR}-*"
+else
+    echo "No discriminator provided. Will cancel deployments in ALL resource groups."
+    echo "To target specific deployments, provide a discriminator: ./cancel-all-deployments.sh [discriminator]"
+fi
 
 # Get all active deployments at subscription level
 echo "Finding active deployments..."
@@ -28,7 +40,13 @@ fi
 
 # Now check resource groups for active deployments
 echo "Finding resource groups..."
-RESOURCE_GROUPS=$(az group list --query "[].name" -o tsv)
+if [ -n "$DISCRIMINATOR" ]; then
+    # Only get resource groups with the discriminator prefix
+    RESOURCE_GROUPS=$(az group list --query "[?starts_with(name, 'rg-${DISCRIMINATOR}-')].name" -o tsv)
+else
+    # Get all resource groups
+    RESOURCE_GROUPS=$(az group list --query "[].name" -o tsv)
+fi
 
 for RG in $RESOURCE_GROUPS; do
     echo "Checking resource group: $RG"

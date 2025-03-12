@@ -20,7 +20,7 @@ resource configureAFD 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${resourceId('rg-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-deployment-scripts')}': {}
+      '${resourceId('rg-${discriminator}-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-${discriminator}-deploy')}': {}
     }
   }
   properties: {
@@ -103,7 +103,7 @@ resource configureAFD 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
         # use the public hostname (not privatelink) as origin and host header
         # Private link connection will still route privately
         ORIGIN_HOST="app-${DISCRIMINATOR}-${CLIENT}.azurewebsites.net"
-        CLIENT_RG="rg-${CLIENT}"
+        CLIENT_RG="rg-${DISCRIMINATOR}-${CLIENT}"
         APP_NAME="app-${DISCRIMINATOR}-${CLIENT}"
 
         # Verify App Service exists
@@ -247,7 +247,7 @@ resource approvePLConnections 'Microsoft.Resources/deploymentScripts@2023-08-01'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${resourceId('rg-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-deployment-scripts')}': {}
+      '${resourceId('rg-${discriminator}-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-${discriminator}-deploy')}': {}
     }
   }
   properties: {
@@ -409,7 +409,7 @@ resource approvePLConnections 'Microsoft.Resources/deploymentScripts@2023-08-01'
         # Front Door components
         ORIGIN_GROUP="afd-og-${DISCRIMINATOR}-${CLIENT}"
         ORIGIN_NAME="afd-o-${DISCRIMINATOR}-${CLIENT}"
-        CLIENT_RG="rg-${CLIENT}"
+        CLIENT_RG="rg-${DISCRIMINATOR}-${CLIENT}"
         APP_NAME="app-${DISCRIMINATOR}-${CLIENT}"
         APP_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${CLIENT_RG}/providers/Microsoft.Web/sites/${APP_NAME}"
         
@@ -465,3 +465,34 @@ resource approvePLConnections 'Microsoft.Resources/deploymentScripts@2023-08-01'
     configureAFD
   ]
 }
+
+// Use deployment script to return the URLs
+resource getOriginUrls 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+  name: 'get-origin-urls'
+  location: resourceGroup().location
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${resourceId('rg-${discriminator}-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-${discriminator}-deploy')}': {}
+    }
+  }
+  
+  // ... existing code ...
+
+// Near the end of the file, there might be another deployment script
+resource configureOrigins 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+  // ... existing code ...
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${resourceId('rg-${discriminator}-central', 'Microsoft.ManagedIdentity/userAssignedIdentities', 'uami-${discriminator}-deploy')}': {}
+    }
+  }
+  
+  // ... existing code ...
+}
+
+// Output information for reference in other modules
+output frontDoorId string = configureAFD.id
+output profileName string = name
